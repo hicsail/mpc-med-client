@@ -1,0 +1,36 @@
+{
+  "name": "web-mpc",
+  "version": "2.0.0",
+  "description": "Web-based data collection and aggregation infrastructure that utilizes secure multi-party computation techniques.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "forge": "^2.3.0",
+    "handsontable": "^0.34.1",
+    "ladda": "^1.0.4",
+    "moment": "^2.18.1",
+    "pikaday": "^1.6.1",
+    "zeroclipboard": "^2.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-requirejs": "^3.1.1"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/eslint client"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/multiparty/web-mpc.git"
+  },
+  "author": "Boston University Software & Application Innovation Lab",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/multiparty/web-mpc/issues"
+  },
+  "homepage": "https://github.com/multiparty/web-mpc#readme"
+}
