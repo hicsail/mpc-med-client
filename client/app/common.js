@@ -12,9 +12,9 @@ require.config({
     alertify: 'vendor/alertify',
     alertify_defaults: 'helper/alertify_defaults',
     DropSheet: 'helper/drop_sheet',
-    /*mpc: 'helper/mpc',*/
+    mpc: 'helper/mpc',
     ResizeSensor: 'vendor/ResizeSensor',
-    /*table_template: 'data/tables'*/
+    table_template: 'data/tables'
 
   },
   shim: {

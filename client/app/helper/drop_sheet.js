@@ -105,57 +105,145 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
 
     // Parses workbook for relevant cells.
     function processWB(wb, type, sheetidx) {
-      var current_sheet, tableidx;
+
+      // Process first ws only by default
+      processWSOnly(wb.Sheets[wb.SheetNames[0]]);
 
       if (sheetidx === null) {
         // Check tab names are valid.
-        for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
-          if (opts.tables_def.tables[tableidx].excel !== undefined) {
-            current_sheet = opts.tables_def.tables[tableidx].excel[0].sheet;
 
-            if (wb.SheetNames.indexOf(current_sheet) === -1) {
-              // Should override anything that was in HOT originally in case of reupload.
-              opts.tables[tableidx].clear();
-              alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-                "Please make sure spreadsheet tab names match those of original template. Tab '" + current_sheet
-                + "' not found.");
-              return;
-            }
-          }
-        }
+        // for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
+        //   if (opts.tables_def.tables[tableidx].excel !== undefined) {
+        //     current_sheet = opts.tables_def.tables[tableidx].excel[0].sheet;
+        //
+        //     if (wb.SheetNames.indexOf(current_sheet) === -1) {
+        //       // Should override anything that was in HOT originally in case of reupload.
+        //       opts.tables[tableidx].clear();
+        //       alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
+        //         "Please make sure spreadsheet tab names match those of original template. Tab '" + current_sheet
+        //         + "' not found.");
+        //       return;
+        //     }
+        //   }
+        // }
       }
 
-      // Corresponds to number of tables that are submitted.
-      var checks = [];
-      for (var i = 0; i < opts.tables_def.tables.length; i++) {
-        if (opts.tables_def.tables[i].submit === null || opts.tables_def.tables[i].submit) {
-          checks.push(false);
-        }
-      }
+      // // Corresponds to number of tables that are submitted.
+      // var checks = [];
+      // for (var i = 0; i < opts.tables_def.tables.length; i++) {
+      //   if (opts.tables_def.tables[i].submit === null || opts.tables_def.tables[i].submit) {
+      //     checks.push(false);
+      //   }
+      // }
 
-      // Loop through xlsx worksheets and tables.
-      for (sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
-        current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
-        for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
-
-          if (opts.tables_def.tables[tableidx].excel !== undefined && opts.tables_def.tables[tableidx].excel !== null && opts.tables_def.tables[tableidx].excel[0] !== null) {
-            if (opts.tables_def.tables[tableidx].excel[0].sheet === wb.SheetNames[sheetidx]) {
-              checks[tableidx] = processWS(current_sheet, opts.tables_def.tables[tableidx], opts.tables[tableidx]);
-
-            }
-          }
-
-        }
-      }
-
-      // Assumes all tables updated.
-      if (checks.indexOf(false) === -1) {
-        alertify.alert('<img src="/images/accept.png" alt="Success">Success',
-          'The tables below have been populated. Please confirm that your data is accurate and scroll down to answer the multiple choice questions, verify, and submit your data');
-        return true; // no errors.
-      }
+      // // Loop through xlsx worksheets and tables.
+      // for (sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
+      //   current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
+      //   for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
+      //
+      //     if (opts.tables_def.tables[tableidx].excel !== undefined && opts.tables_def.tables[tableidx].excel !== null && opts.tables_def.tables[tableidx].excel[0] !== null) {
+      //       if (opts.tables_def.tables[tableidx].excel[0].sheet === wb.SheetNames[sheetidx]) {
+      //         checks[tableidx] = processWS(current_sheet, opts.tables_def.tables[tableidx], opts.tables[tableidx]);
+      //
+      //       }
+      //     }
+      //
+      //   }
+      // }
+      //
+      // // Assumes all tables updated.
+      // if (checks.indexOf(false) === -1) {
+      //   alertify.alert('<img src="/images/accept.png" alt="Success">Success',
+      //     'The tables below have been populated. Please confirm that your data is accurate and scroll down to answer the multiple choice questions, verify, and submit your data');
+      //   return true; // no errors.
+      // }
 
       return false; // There are some errors.
+    }
+
+    function processWSOnly(ws) {
+      console.log(ws);
+
+      // Check for biomarkers
+      if (!$('#biomarkers-list').val()) {
+        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
+          'Please add biomarker labels separated by new line characters.');
+        return false;
+      }
+
+      var biomarkers = $('#biomarkers-list').val().split('\n');
+
+
+      if (ws['!ref']) {
+
+        var start = ws['!ref'].split(':')[0];
+        var end = ws['!ref'].split(':')[1];
+        var start_coord = XLSX.utils.decode_cell(start);
+        var end_coord_row = Number(XLSX.utils.decode_cell(end).r);
+        var end_coord_col = Number(XLSX.utils.decode_cell(end).c);
+
+        var cell_address;
+        var cell_ref;
+        var cell_value;
+
+        // Loop through worksheet.
+        for (var r = 0; r < 999; r++) {
+          for (var c = 0; c < 27; c++) {
+            cell_ref = XLSX.utils.encode_cell({c: c, r: r});
+            if (!ws[cell_ref] || !ws[cell_ref].v) {
+              continue;
+            }
+            cell_value = ws[cell_ref].v;
+
+
+            console.log(cell_ref);
+
+            console.log(cell_value);
+
+            // Check against biomarkers list.
+            for (var b = 0; b < biomarkers.length; b++) {
+              if (cell_value.indexOf(biomarkers[b].trim()) !== -1) {
+                // Use this row as a column header row.
+                console.log(cell_ref);
+                console.log(cell_value);
+              }
+            }
+
+          }
+        }
+        //
+        // for (var r = 0; r <= end_coord_row; r++) {
+        //
+        //   for (var c = 0; c <= end_coord_col; c++) {
+        //
+        //
+        //     cell_address = {c: c, r:r};
+        //     cell_ref = XLSX.utils.encode_cell({c: c, r: r});
+        //     cell_value = ws[cell_ref].v;
+        //
+        //     console.log(cell_address);
+        //     console.log(cell_ref);
+        //
+        //
+        //     // Find column headers.
+        //     if (cell_value.indexOf('IL-') !== -1) {
+        //       console.log(cell_ref);
+        //       console.log(cell_value);
+        //     }
+        //
+        //     for (var i = 0; i < biomarkers.length; i++) {
+        //       if (cell_value.indexOf(biomarkers[i].trim()) !== -1) {
+        //         console.log(cell_ref);
+        //         console.log(cell_value);
+        //       }
+        //     }
+        //
+        //   }
+        // }
+
+      } else {
+        return false;
+      }
     }
 
     // Processes single XLSX JS worksheet and updates one Handsontable.
