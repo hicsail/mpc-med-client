@@ -162,88 +162,47 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
     }
 
     function processWSOnly(ws) {
-      console.log(ws);
 
-      // Check for biomarkers
+      var sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+
+      // Check for biomarkers and obtain biomarkers list.
       if (!$('#biomarkers-list').val()) {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
           'Please add biomarker labels separated by new line characters.');
         return false;
       }
 
+      console.log(sheet_arr);
+
       var biomarkers = $('#biomarkers-list').val().split('\n');
 
+      for (var b = 0; b < biomarkers.length; b++) {
+        biomarkers[b] = biomarkers[b].trim();
+      }
 
-      if (ws['!ref']) {
+      var table_rows = new Set();
 
-        var start = ws['!ref'].split(':')[0];
-        var end = ws['!ref'].split(':')[1];
-        var start_coord = XLSX.utils.decode_cell(start);
-        var end_coord_row = Number(XLSX.utils.decode_cell(end).r);
-        var end_coord_col = Number(XLSX.utils.decode_cell(end).c);
+      // Find rows with biomarkers.
 
-        var cell_address;
-        var cell_ref;
-        var cell_value;
+      for (var i = 0; i < sheet_arr.length; i++) {
+        for (var j = 0; j < sheet_arr[i].length; j++) {
 
-        // Loop through worksheet.
-        for (var r = 0; r < 999; r++) {
-          for (var c = 0; c < 27; c++) {
-            cell_ref = XLSX.utils.encode_cell({c: c, r: r});
-            if (!ws[cell_ref] || !ws[cell_ref].v) {
-              continue;
+          for (var b = 0; b < biomarkers.length; b++) {
+            var cell_val = sheet_arr[i][j].toUpperCase();
+            console.log(typeof(cell_val));
+            if (cell_val.indexOf(biomarkers[b]) !== -1 || cell_val.indexOf('IL-') !== -1) {
+              console.log(cell_val);
+              table_rows.push(i);
             }
-            cell_value = ws[cell_ref].v;
-
-
-            console.log(cell_ref);
-
-            console.log(cell_value);
-
-            // Check against biomarkers list.
-            for (var b = 0; b < biomarkers.length; b++) {
-              if (cell_value.indexOf(biomarkers[b].trim()) !== -1) {
-                // Use this row as a column header row.
-                console.log(cell_ref);
-                console.log(cell_value);
-              }
-            }
-
           }
         }
-        //
-        // for (var r = 0; r <= end_coord_row; r++) {
-        //
-        //   for (var c = 0; c <= end_coord_col; c++) {
-        //
-        //
-        //     cell_address = {c: c, r:r};
-        //     cell_ref = XLSX.utils.encode_cell({c: c, r: r});
-        //     cell_value = ws[cell_ref].v;
-        //
-        //     console.log(cell_address);
-        //     console.log(cell_ref);
-        //
-        //
-        //     // Find column headers.
-        //     if (cell_value.indexOf('IL-') !== -1) {
-        //       console.log(cell_ref);
-        //       console.log(cell_value);
-        //     }
-        //
-        //     for (var i = 0; i < biomarkers.length; i++) {
-        //       if (cell_value.indexOf(biomarkers[i].trim()) !== -1) {
-        //         console.log(cell_ref);
-        //         console.log(cell_value);
-        //       }
-        //     }
-        //
-        //   }
-        // }
-
-      } else {
-        return false;
       }
+
+      for (var i = 0; i < table_rows.length; i++) {
+        console.log(sheet_arr[i]);
+      }
+
+      return true;
     }
 
     // Processes single XLSX JS worksheet and updates one Handsontable.
@@ -300,9 +259,9 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
 
         // If expected row name not found.
         if (!found_row) {
-          alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-            "Spreadsheet format does not match original template. Please copy-and-paste or type data into the '" +
-            table_def.name + "' table manually.");
+          alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+            'Spreadsheet format does not match original template. Please copy-and-paste or type data into the ' +
+            table_def.name + ' table manually.');
           return false;
         }
       }
@@ -325,17 +284,17 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
       // Check that number of expected numeric cells is correct. Otherwise alert user.
       // Row and column checks.
       if (matrix.length !== num_rows) {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-          "Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the '" +
-          table_def.name + "' table manually.");
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+          'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+          table_def.name + ' table manually.');
         return false;
       }
 
       for (i = 0; i < matrix.length; i++) {
         if (matrix[i].length !== num_cols) {
-          alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-            "Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the '" +
-            table_def.name + "' table manually.");
+          alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+            'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+            table_def.name + ' table manually.');
           return false;
         }
       }
@@ -352,9 +311,9 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
         return true;
       }
 
-      alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-        "Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the '" +
-        table_def.name + "' table manually.");
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+        'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+        table_def.name + ' table manually.');
       return false;
 
     }
@@ -374,7 +333,7 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
         // readFile(files);
         opts.handle_file(e);
       } else {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!", "Drag and drop not supported. Please use the 'Choose File' button or copy-and-paste data.");
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
       }
 
     }
@@ -388,7 +347,7 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
         $('#drop-area').removeClass('dragdefault');
         $('#drop-area').addClass('dragenter');
       } else {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!", "Drag and drop not supported. Please use the 'Choose File' button or copy-and-paste data.");
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
       }
     }
 
@@ -396,7 +355,7 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
       if (typeof jQuery !== 'undefined') {
         $('#drop-area').removeClass('dragenter');
       } else {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!", "Drag and drop not supported. Please use the 'Choose File' button or copy-and-paste data.");
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
       }
     }
 
@@ -404,7 +363,7 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
       if (typeof jQuery !== 'undefined') {
         $('#choose-file').click();
       } else {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!", "Drag and drop not supported. Please use the 'Choose File' button or copy-and-paste data.");
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
       }
     }
 
@@ -431,7 +390,7 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
         // FileReader is supported.
         readFile(files);
       } else {
-        alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!", 'FileReader is not supported in this browser.');
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'FileReader is not supported in this browser.');
       }
     }
 
