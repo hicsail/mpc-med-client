@@ -1,4 +1,4 @@
-define(['jquery', 'controllers/clientController', 'controllers/tableController', 'helper/drop_sheet', 'spin', 'Ladda', 'ResizeSensor', 'alertify', 'table_template', 'bootstrap'],
+define(['jquery', 'controllers/clientController', 'controllers/tableController', 'helper/drop_sheet', 'spin', 'Ladda', 'ResizeSensor', 'alertify', 'table_template', 'bootstrap'] ,
   function ($, clientController, tableController, DropSheet, Spinner, Ladda, ResizeSensor, alertify, table_template) {
 
     function clientControllerView() {
@@ -100,8 +100,8 @@ define(['jquery', 'controllers/clientController', 'controllers/tableController',
           }
           tables[4].setDataAtCell(changes); // This changes the data without changing cellProperties (e.g. keeps readOnly)
         };
-        // Alerts, page elements, etc. for drag-and-drop/choose file.
-        // var workbook_js = null;
+        //Alerts, page elements, etc. for drag-and-drop/choose file.
+        //var workbook_js = null;
 
         var _target = document.getElementById('drop-area');
         var _choose = document.getElementById('choose-file-button');

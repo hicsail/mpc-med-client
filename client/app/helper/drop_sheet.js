@@ -174,33 +174,66 @@ define(['alertify', 'alertify_defaults', 'XLSX'], function (alertify) {
 
       console.log(sheet_arr);
 
-      var biomarkers = $('#biomarkers-list').val().split('\n');
+      var biomarkers = $('#biomarkers-list').val().trim().split('\n');
 
       for (var b = 0; b < biomarkers.length; b++) {
         biomarkers[b] = biomarkers[b].trim();
       }
 
-      var table_rows = new Set();
+      var table_rows = new Set(); // Indices of rows that contain biomarkers (aka table header rows).
 
       // Find rows with biomarkers.
 
       for (var i = 0; i < sheet_arr.length; i++) {
         for (var j = 0; j < sheet_arr[i].length; j++) {
 
+          var cell_val = sheet_arr[i][j];
+
+          if (!cell_val) {
+            continue;
+          }
+
+          if (typeof cell_val === 'string') {
+            cell_val = cell_val.toUpperCase();
+          }
+
           for (var b = 0; b < biomarkers.length; b++) {
-            var cell_val = sheet_arr[i][j].toUpperCase();
-            console.log(typeof(cell_val));
             if (cell_val.indexOf(biomarkers[b]) !== -1 || cell_val.indexOf('IL-') !== -1) {
-              console.log(cell_val);
-              table_rows.push(i);
+              table_rows.add(i);
             }
           }
         }
       }
 
-      for (var i = 0; i < table_rows.length; i++) {
-        console.log(sheet_arr[i]);
+      // WIP. Process sheet table by table.
+
+      var formatted_data = [];
+      var table_row_indices = Array.from(table_rows);
+
+      for (var i = 0; i < table_row_indices.length - 1; i++) {
+        var entry = new Object();
+
+        // Collect table information.
+
+        var table_header;
+        if (table_row_indices[i] === 0) {
+          table_header = sheet_arr[table_row_indices[i]].join();
+        }
+
+        table_header = sheet_arr[table_row_indices[i] - 1].join();
+
+        entry['table_type'] = table_header;
+
+        // Loop through each table.
+
+        // for (var j = table_row_indices[i] + 1; j < table_row_indices[i + 1]; j++) {
+        //
+        // }
+
+        formatted_data.push(entry);
       }
+
+      console.log(formatted_data);
 
       return true;
     }
