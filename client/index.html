@@ -212,25 +212,18 @@
     <script src="js/xlsx.full.min.js"></script>
     <script src="js/dropsheet.js"></script>
     <script>
-var sheets = {'Buses':true, 'Stop-Assignments':true, 'Routes':true};
 var scoreboard;
 var _target = document.getElementById('drop-area');
 var _choose = document.getElementById('choose-file-button');
 var spinner;
 var _workstart = function() { spinner = new Spinner().spin(_target); }
-var _workend = function(clusterize) {
-  return function() {
-    spinner.stop();
-    $("#criteria").fadeTo(250, 1);
-    $('#simulation_view').show();
-    $('#spreadsheet_view').show();
-    clusterize.clear();
-  };
-};
-var _badfile = function() { alertify.alert('This file does not appear to be a valid Excel file.', function(){}); };
+ var _workend = function (status) {
+          spinner.stop();
+        };
+var _badfile = function() { alertify.alert('This file does not appear to be a valid Excel file.', function(){}); /*spinner.stop();*/ };
 var _pending = function() { alertify.alert('Please wait until the current file is processed.', function(){}); };
 var _large = function(len, cb) { alertify.confirm("This file is " + (len/(1024*1024)).toFixed(2) + " MB and may take a few moments. Your browser may lock up during this process. Continue?", cb); };
-var _failed = function(e) { alertify.alert('This format is not supported.', function(){}); };
+var _failed = function(e) { alertify.alert('This format is not supported.', function(){}); /*spinner.stop();*/ };
 var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
   Handsontable.TextCell.renderer.apply(this, arguments);
   $(td).css({'font-weight': 'bold'});
@@ -285,9 +278,9 @@ $(document).ready(function() {
 var clusterize = new Clusterize({scrollId:'scrollArea', contentId:'contentArea'});
 var workbook_js = DropSheet({
   drop: _target, choose: _choose,
-  on: { workstart: _workstart, workend: _workend(clusterize), sheet: _onsheet },
+  on: { workstart: _workstart, workend: _workend, sheet: _onsheet },
   errors: { badfile: _badfile, pending: _pending, failed: _failed, large: _large }
-}, sheets);
+});
 $('#tables-area').hide();
 $('#expand-table-button').click(function (e) {
   $('#tables-area').slideToggle();
