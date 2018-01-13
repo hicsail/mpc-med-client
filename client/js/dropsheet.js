@@ -1,432 +1,494 @@
 var DropSheet = function DropSheet(opts) {
-    if (!opts) {
-      opts = {};
-    }
-    var nullfunc = function () {
-    };
-    if (!opts.errors) {
-      opts.errors = {};
-    }
-    if (!opts.handle_file) {
-      opts.handle_file = handleFile;
-    }
-    if (!opts.errors.badfile) {
-      opts.errors.badfile = nullfunc;
-    }
-    if (!opts.errors.pending) {
-      opts.errors.pending = nullfunc;
-    }
-    if (!opts.errors.failed) {
-      opts.errors.failed = nullfunc;
-    }
-    if (!opts.errors.large) {
-      opts.errors.large = nullfunc;
-    }
-    if (!opts.on) {
-      opts.on = {};
-    }
-    if (!opts.on.workstart) {
-      opts.on.workstart = nullfunc;
-    }
-    if (!opts.on.workend) {
-      opts.on.workend = nullfunc;
-    }
-    if (!opts.on.sheet) {
-      opts.on.sheet = nullfunc;
-    }
-    if (!opts.on.wb) {
-      opts.on.wb = nullfunc;
-    }
+  if (!opts) {
+    opts = {};
+  }
+  var nullfunc = function () {
+  };
+  if (!opts.errors) {
+    opts.errors = {};
+  }
+  if (!opts.handle_file) {
+    opts.handle_file = handleFile;
+  }
+  if (!opts.errors.badfile) {
+    opts.errors.badfile = nullfunc;
+  }
+  if (!opts.errors.pending) {
+    opts.errors.pending = nullfunc;
+  }
+  if (!opts.errors.failed) {
+    opts.errors.failed = nullfunc;
+  }
+  if (!opts.errors.large) {
+    opts.errors.large = nullfunc;
+  }
+  if (!opts.on) {
+    opts.on = {};
+  }
+  if (!opts.on.workstart) {
+    opts.on.workstart = nullfunc;
+  }
+  if (!opts.on.workend) {
+    opts.on.workend = nullfunc;
+  }
+  if (!opts.on.sheet) {
+    opts.on.sheet = nullfunc;
+  }
+  if (!opts.on.wb) {
+    opts.on.wb = nullfunc;
+  }
 
-    var rABS = typeof FileReader !== 'undefined' && typeof FileReader.prototype !== 'undefined' && typeof FileReader.prototype.readAsBinaryString !== 'undefined';
-    // var useworker = typeof Worker !== 'undefined';
-    var pending = false;
+  var rABS = typeof FileReader !== 'undefined' && typeof FileReader.prototype !== 'undefined' && typeof FileReader.prototype.readAsBinaryString !== 'undefined';
+  // var useworker = typeof Worker !== 'undefined';
+  var pending = false;
 
-    // Various functions for reading in, parsing.
-    function readFile(files) {
+  // Various functions for reading in, parsing.
+  function readFile(files) {
 
-      var i, f;
-      for (i = 0; i !== files.length; ++i) {
-        f = files[i];
-        var reader = new FileReader();
+    var i, f;
+    for (i = 0; i !== files.length; ++i) {
+      f = files[i];
+      var reader = new FileReader();
 
-        reader.onload = function (e) {
-          var data = e.target.result;
+      reader.onload = function (e) {
+        var data = e.target.result;
 
-          var wb, arr = false;
-          var readtype = {type: rABS ? 'binary' : 'base64'};
-          if (!rABS) {
-            arr = fixData(data);
-            data = btoa(arr);
+        var wb, arr = false;
+        var readtype = {type: rABS ? 'binary' : 'base64'};
+        if (!rABS) {
+          arr = fixData(data);
+          data = btoa(arr);
+        }
+
+        function doit() {
+          try {
+            opts.on.workstart();
+
+            wb = XLSX.read(data, readtype);
+            opts.on.workend(processWB(wb, 'XLSX'));
+          } catch (e) {
+            opts.errors.failed(e);
           }
+        }
 
-          function doit() {
-            try {
-              opts.on.workstart();
-
-              wb = XLSX.read(data, readtype);
-              opts.on.workend(processWB(wb, 'XLSX'));
-            } catch (e) {
-              opts.errors.failed(e);
+        if (e.target.result.length > 500000) {
+          opts.errors.large(e.target.result.length, function (e) {
+            if (e) {
+              doit();
             }
-          }
-
-          if (e.target.result.length > 500000) {
-            opts.errors.large(e.target.result.length, function (e) {
-              if (e) {
-                doit();
-              }
-            });
-          } else {
-            doit();
-          }
-        };
-        if (rABS) {
-          reader.readAsBinaryString(f);
+          });
         } else {
-          reader.readAsArrayBuffer(f);
+          doit();
         }
+      };
+      if (rABS) {
+        reader.readAsBinaryString(f);
+      } else {
+        reader.readAsArrayBuffer(f);
       }
     }
+  }
 
-    // Helper method for array buffer read-in.
-    function fixData(data) {
-      var o = '', l = 0, w = 10240;
-      for (; l < data.byteLength / w; ++l) {
-        o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w, l * w + w)));
-      }
-      o += String.fromCharCode.apply(null, new Uint8Array(data.slice(o.length)));
-      return o;
+  // Helper method for array buffer read-in.
+  function fixData(data) {
+    var o = '', l = 0, w = 10240;
+    for (; l < data.byteLength / w; ++l) {
+      o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w, l * w + w)));
     }
+    o += String.fromCharCode.apply(null, new Uint8Array(data.slice(o.length)));
+    return o;
+  }
 
 
-    // Parses workbook for relevant cells.
-    function processWB(wb, type, sheetidx) {
+  // Parses workbook for relevant cells.
+  function processWB(wb, type, sheetidx) {
 
-      // Process first ws only by default
-      processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+    // Process first ws only by default
+    processWSOnly(wb.Sheets[wb.SheetNames[0]]);
 
-      if (sheetidx === null) {
-        // Check tab names are valid.
+    if (sheetidx === null) {
+      // Check tab names are valid.
 
-        // for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
-        //   if (opts.tables_def.tables[tableidx].excel !== undefined) {
-        //     current_sheet = opts.tables_def.tables[tableidx].excel[0].sheet;
-        //
-        //     if (wb.SheetNames.indexOf(current_sheet) === -1) {
-        //       // Should override anything that was in HOT originally in case of reupload.
-        //       opts.tables[tableidx].clear();
-        //       alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-        //         "Please make sure spreadsheet tab names match those of original template. Tab '" + current_sheet
-        //         + "' not found.");
-        //       return;
-        //     }
-        //   }
-        // }
-      }
-
-      // // Corresponds to number of tables that are submitted.
-      // var checks = [];
-      // for (var i = 0; i < opts.tables_def.tables.length; i++) {
-      //   if (opts.tables_def.tables[i].submit === null || opts.tables_def.tables[i].submit) {
-      //     checks.push(false);
-      //   }
-      // }
-
-      // // Loop through xlsx worksheets and tables.
-      // for (sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
-      //   current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
-      //   for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
+      // for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
+      //   if (opts.tables_def.tables[tableidx].excel !== undefined) {
+      //     current_sheet = opts.tables_def.tables[tableidx].excel[0].sheet;
       //
-      //     if (opts.tables_def.tables[tableidx].excel !== undefined && opts.tables_def.tables[tableidx].excel !== null && opts.tables_def.tables[tableidx].excel[0] !== null) {
-      //       if (opts.tables_def.tables[tableidx].excel[0].sheet === wb.SheetNames[sheetidx]) {
-      //         checks[tableidx] = processWS(current_sheet, opts.tables_def.tables[tableidx], opts.tables[tableidx]);
-      //
-      //       }
+      //     if (wb.SheetNames.indexOf(current_sheet) === -1) {
+      //       // Should override anything that was in HOT originally in case of reupload.
+      //       opts.tables[tableidx].clear();
+      //       alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
+      //         "Please make sure spreadsheet tab names match those of original template. Tab '" + current_sheet
+      //         + "' not found.");
+      //       return;
       //     }
-      //
       //   }
       // }
-      //
-      // // Assumes all tables updated.
-      // if (checks.indexOf(false) === -1) {
-      //   alertify.alert('<img src="/images/accept.png" alt="Success">Success',
-      //     'The tables below have been populated. Please confirm that your data is accurate and scroll down to answer the multiple choice questions, verify, and submit your data');
-      //   return true; // no errors.
-      // }
-
-      return false; // There are some errors.
     }
 
-    function processWSOnly(ws) {
+    // // Corresponds to number of tables that are submitted.
+    // var checks = [];
+    // for (var i = 0; i < opts.tables_def.tables.length; i++) {
+    //   if (opts.tables_def.tables[i].submit === null || opts.tables_def.tables[i].submit) {
+    //     checks.push(false);
+    //   }
+    // }
 
-      var sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+    // // Loop through xlsx worksheets and tables.
+    // for (sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
+    //   current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
+    //   for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
+    //
+    //     if (opts.tables_def.tables[tableidx].excel !== undefined && opts.tables_def.tables[tableidx].excel !== null && opts.tables_def.tables[tableidx].excel[0] !== null) {
+    //       if (opts.tables_def.tables[tableidx].excel[0].sheet === wb.SheetNames[sheetidx]) {
+    //         checks[tableidx] = processWS(current_sheet, opts.tables_def.tables[tableidx], opts.tables[tableidx]);
+    //
+    //       }
+    //     }
+    //
+    //   }
+    // }
+    //
+    // // Assumes all tables updated.
+    // if (checks.indexOf(false) === -1) {
+    //   alertify.alert('<img src="/images/accept.png" alt="Success">Success',
+    //     'The tables below have been populated. Please confirm that your data is accurate and scroll down to answer the multiple choice questions, verify, and submit your data');
+    //   return true; // no errors.
+    // }
 
-      // Check for biomarkers and obtain biomarkers list.
-      if (!$('#biomarkers-list').val()) {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-          'Please add biomarker labels separated by new line characters.');
-        return false;
-      }
+    return false; // There are some errors.
+  }
 
-      console.log(sheet_arr);
+  function processWSOnly(ws) {
 
-      var biomarkers = $('#biomarkers-list').val().trim().split('\n');
+    var sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
 
-      for (var b = 0; b < biomarkers.length; b++) {
-        biomarkers[b] = biomarkers[b].trim();
-      }
+    //console.log(sheet_arr);
 
-      var table_rows = new Set(); // Indices of rows that contain biomarkers (aka table header rows).
+    // Check for analytes and obtain analytes list.
 
-      // Find rows with biomarkers.
+    const analytes = [
+      'IL-17F',
+      'GM-CSF',
+      'IFNg',
+      'IL-10',
+      'CCL20/MIP3a',
+      'IL-12p70',
+      'IL-13',
+      'IL-15',
+      'IL-17A',
+      'IL-22',
+      'IL-9',
+      'IL-1B',
+      'IL-33',
+      'IL-2',
+      'IL-21',
+      'IL-4',
+      'IL-23',
+      'IL-5',
+      'IL-6',
+      'IL-17E/IL-25',
+      'IL-27',
+      'IL-31',
+      'TNFa',
+      'TNFb',
+      'IL-28A'
+    ];
 
-      for (var i = 0; i < sheet_arr.length; i++) {
-        for (var j = 0; j < sheet_arr[i].length; j++) {
+    var table_rows = new Set(); // Indices of rows that contain analytes (aka table header rows).
+    var analytes_headers_coordinates = [];
+    var well_coordinates = [];
+    var cell_val;
 
-          var cell_val = sheet_arr[i][j];
+    // Find rows with analytes.
+    // Find well coordinates.
 
-          if (!cell_val) {
-            continue;
-          }
+    for (var i = 0; i < sheet_arr.length; i++) {
+      for (var j = 0; j < sheet_arr[i].length; j++) {
 
-          if (typeof cell_val === 'string') {
-            cell_val = cell_val.toUpperCase();
-          }
+        cell_val = sheet_arr[i][j];
 
-          for (var b = 0; b < biomarkers.length; b++) {
-            if (cell_val.indexOf(biomarkers[b]) !== -1 || cell_val.indexOf('IL-') !== -1) {
-              table_rows.add(i);
-            }
+        if (!cell_val) {
+          continue;
+        }
+
+        if (typeof cell_val === 'string') {
+          cell_val = cell_val.toUpperCase();
+        }
+
+        // Check for match with analyte list.
+
+        for (var b = 0; b < analytes.length; b++) {
+          if (cell_val.indexOf(analytes[b]) !== -1) {
+            table_rows.add(i);
+            analytes_headers_coordinates.push({analyte: analytes[b], r: i, c: j});
           }
         }
+
+        // Check for regex match with well coordinates.
+        var pattern = /\(1,[a-z][0-9]\)/i;
+        if (pattern.exec(cell_val)) {
+          well_coordinates.push({r: i, c: j});
+        }
+      }
+    }
+
+    //console.log(analytes_headers_coordinates);
+    //console.log(well_coordinates);
+
+    // WIP. Process sheet table by table.
+
+    var formatted_data = [];
+    var table_row_indices = Array.from(table_rows);
+
+    // for (var i = 0; i < table_row_indices.length - 1; i++) {
+    //   var entry = new Object();
+    //
+    //   // Collect table information.
+    //
+    //   var table_header;
+    //   if (table_row_indices[i] === 0) {
+    //     table_header = sheet_arr[table_row_indices[i]].join();
+    //   }
+    //
+    //   table_header = sheet_arr[table_row_indices[i] - 1].join();
+    //
+    //   entry['table_type'] = table_header;
+    //
+    //   // Loop through each table.
+    //
+    //   for (var j = table_row_indices[i] + 1; j < table_row_indices[i + 1]; j++) {
+    //     for (var k = 0; k < j.length; k++) {
+    //       cell_val = sheet_arr[j][k];
+    //     }
+    //   }
+    //
+    //   formatted_data.push(entry);
+    // }
+
+    var table_number = 0;
+    var entry;
+    for (i = 0; i < well_coordinates.length; i++) {
+
+      var well_row_num = well_coordinates[i].r; // Row number of a given well location.
+      var well_col_num = well_coordinates[i].c; // Column number of a given well location.
+      var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
+
+      // Find table index corresponding to current well's data.
+      while (analyte_header_row > well_row_num) {
+        table_number++;
       }
 
-      // WIP. Process sheet table by table.
+      // Loop through columns indicated by analyte headers.
 
-      var formatted_data = [];
-      var table_row_indices = Array.from(table_rows);
-
-      for (var i = 0; i < table_row_indices.length - 1; i++) {
-        var entry = new Object();
-
-        // Collect table information.
-
-        var table_header;
-        if (table_row_indices[i] === 0) {
-          table_header = sheet_arr[table_row_indices[i]].join();
-        }
-
-        table_header = sheet_arr[table_row_indices[i] - 1].join();
-
-        entry['table_type'] = table_header;
-
-        // Loop through each table.
-
-        // for (var j = table_row_indices[i] + 1; j < table_row_indices[i + 1]; j++) {
-        //
-        // }
-
+      for (j = well_col_num + 1; j < sheet_arr[analyte_header_row].length; j++) {
+        entry = new Object();
+        cell_val = sheet_arr[well_row_num][j];
+        entry['value'] = cell_val;
+        entry['analyte'] = sheet_arr[analyte_header_row][j];
+        entry['location'] = sheet_arr[well_row_num][well_col_num];
+        entry['table_type'] = sheet_arr[analyte_header_row - 1].join().replace(',', '');
         formatted_data.push(entry);
       }
 
-      console.log(formatted_data);
-
-      return true;
     }
 
-    // Processes single XLSX JS worksheet and updates one Handsontable.
-    function processWS(ws, table_def, table) {
-      // console.log("WORKSHEET", ws, table_def, table);
+    console.log(formatted_data);
 
-      // Clear existing values in case user is submitting updated sheet after error.
-      //table.clear();
+    return true;
+  }
 
-      // Default range for input section of spreadsheet, obtained from tables.json.
-      var sheet_start = table_def.excel[0].start;
-      var sheet_end = table_def.excel[0].end;
+  // Processes single XLSX JS worksheet and updates one Handsontable.
+  function processWS(ws, table_def, table) {
+    // console.log("WORKSHEET", ws, table_def, table);
 
-      // Ranges for handsontable.
-      var table_start = XLS.utils.decode_cell(sheet_start);
-      var table_end = XLS.utils.decode_cell(sheet_end);
-      var num_rows = table_end.r - table_start.r + 1;
-      var num_cols = table_end.c - table_start.c + 1;
+    // Clear existing values in case user is submitting updated sheet after error.
+    //table.clear();
 
-      var changes = [];
+    // Default range for input section of spreadsheet, obtained from tables.json.
+    var sheet_start = table_def.excel[0].start;
+    var sheet_end = table_def.excel[0].end;
 
-      // Keys of XLSX js worksheet.
-      var ws_keys = Object.keys(ws);
+    // Ranges for handsontable.
+    var table_start = XLS.utils.decode_cell(sheet_start);
+    var table_end = XLS.utils.decode_cell(sheet_end);
+    var num_rows = table_end.r - table_start.r + 1;
+    var num_cols = table_end.c - table_start.c + 1;
 
-      // Default settings for matrix boundary.
-      var matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
+    var changes = [];
 
-      // console.log("MATRIX", matrix)
-      // Check if default range is correct based on top row name.
-      if (!(ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})] !== undefined &&
-          ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})].v === table_def.excel[0].firstrow)) {
+    // Keys of XLSX js worksheet.
+    var ws_keys = Object.keys(ws);
+
+    // Default settings for matrix boundary.
+    var matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
+
+    // console.log("MATRIX", matrix)
+    // Check if default range is correct based on top row name.
+    if (!(ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})] !== undefined &&
+        ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})].v === table_def.excel[0].firstrow)) {
 
 
-        var found_row = false;
+      var found_row = false;
 
-        // If table is not in expected position, get new boundaries.
-        for (var i = 0; i < ws_keys.length; i++) {
-          var key = ws_keys[i];
+      // If table is not in expected position, get new boundaries.
+      for (var i = 0; i < ws_keys.length; i++) {
+        var key = ws_keys[i];
 
-          // Parse for location of top row name.
-          if (ws[key].v !== undefined && ws[key].v !== null && table_def.excel[0].firstrow.toString() === ws[key].v.toString()) {
-            // Update to boundaries of table (start, end, etc.)
-            var new_start_row = Number(XLS.utils.decode_cell(key).r);
-            var new_start_col = Number(XLS.utils.decode_cell(key).c) + 1;
-            sheet_start = XLSX.utils.encode_cell({r: new_start_row, c: new_start_col});
-            sheet_end = XLSX.utils.encode_cell({r: new_start_row + num_rows - 1, c: new_start_col + num_cols - 1});
-            table_start = XLSX.utils.decode_cell(sheet_start);
-            table_end = XLSX.utils.decode_cell(sheet_end);
-            matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
-            found_row = true;
-            break;
-          }
-        }
-
-        // If expected row name not found.
-        if (!found_row) {
-          alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-            'Spreadsheet format does not match original template. Please copy-and-paste or type data into the ' +
-            table_def.name + ' table manually.');
-          return false;
+        // Parse for location of top row name.
+        if (ws[key].v !== undefined && ws[key].v !== null && table_def.excel[0].firstrow.toString() === ws[key].v.toString()) {
+          // Update to boundaries of table (start, end, etc.)
+          var new_start_row = Number(XLS.utils.decode_cell(key).r);
+          var new_start_col = Number(XLS.utils.decode_cell(key).c) + 1;
+          sheet_start = XLSX.utils.encode_cell({r: new_start_row, c: new_start_col});
+          sheet_end = XLSX.utils.encode_cell({r: new_start_row + num_rows - 1, c: new_start_col + num_cols - 1});
+          table_start = XLSX.utils.decode_cell(sheet_start);
+          table_end = XLSX.utils.decode_cell(sheet_end);
+          matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
+          found_row = true;
+          break;
         }
       }
 
-      // Filter array to get rid of undefined values/any headers.
-      for (i = 0; i < matrix.length; i++) {
-        matrix[i] = matrix[i].filter(function (cell) {
-          return cell !== undefined && cell !== null && !isNaN(Number(cell));
-        })
+      // If expected row name not found.
+      if (!found_row) {
+        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+          'Spreadsheet format does not match original template. Please copy-and-paste or type data into the ' +
+          table_def.name + ' table manually.');
+        return false;
       }
+    }
 
-      // Parsing sometimes leads to empty rows, remove these.
-      for (var j = matrix.length - 1; j >= 0; j--) {
-        if (matrix[j].length === 0) {
-          matrix.splice(j, 1);
-        }
+    // Filter array to get rid of undefined values/any headers.
+    for (i = 0; i < matrix.length; i++) {
+      matrix[i] = matrix[i].filter(function (cell) {
+        return cell !== undefined && cell !== null && !isNaN(Number(cell));
+      })
+    }
+
+    // Parsing sometimes leads to empty rows, remove these.
+    for (var j = matrix.length - 1; j >= 0; j--) {
+      if (matrix[j].length === 0) {
+        matrix.splice(j, 1);
       }
+    }
 
 
-      // Check that number of expected numeric cells is correct. Otherwise alert user.
-      // Row and column checks.
-      if (matrix.length !== num_rows) {
+    // Check that number of expected numeric cells is correct. Otherwise alert user.
+    // Row and column checks.
+    if (matrix.length !== num_rows) {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+        'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+        table_def.name + ' table manually.');
+      return false;
+    }
+
+    for (i = 0; i < matrix.length; i++) {
+      if (matrix[i].length !== num_cols) {
         alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
           'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
           table_def.name + ' table manually.');
         return false;
       }
-
-      for (i = 0; i < matrix.length; i++) {
-        if (matrix[i].length !== num_cols) {
-          alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-            'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
-            table_def.name + ' table manually.');
-          return false;
-        }
-      }
-
-      // For each sheet, set value in handsontable.
-      for (var r = 0; r < num_rows; r++) {
-        for (var c = 0; c < num_cols; c++) {
-          changes.push([r, c, matrix[r][c]]);
-        }
-      }
-
-      if (changes.length > 0) {
-        table.setDataAtCell(changes);
-        return true;
-      }
-
-      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-        'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
-        table_def.name + ' table manually.');
-      return false;
-
     }
 
-    // For drag-and-drop.
-
-    function handleDrop(e) {
-
-      if (typeof jQuery !== 'undefined') {
-        e.stopPropagation();
-        e.preventDefault();
-        if (pending) {
-          return opts.errors.pending();
-        }
-        // var files = e.dataTransfer.files;
-        $('#drop-area').removeClass('dragenter');
-        // readFile(files);
-        opts.handle_file(e);
-      } else {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
-      }
-
-    }
-
-    function handleDragover(e) {
-
-      if (typeof jQuery !== 'undefined') {
-        e.stopPropagation();
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-        $('#drop-area').removeClass('dragdefault');
-        $('#drop-area').addClass('dragenter');
-      } else {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
+    // For each sheet, set value in handsontable.
+    for (var r = 0; r < num_rows; r++) {
+      for (var c = 0; c < num_cols; c++) {
+        changes.push([r, c, matrix[r][c]]);
       }
     }
 
-    function handleDragleave(e) {
-      if (typeof jQuery !== 'undefined') {
-        $('#drop-area').removeClass('dragenter');
-      } else {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
-      }
+    if (changes.length > 0) {
+      table.setDataAtCell(changes);
+      return true;
     }
 
-    function handleClick(e) {
-      if (typeof jQuery !== 'undefined') {
-        $('#choose-file').click();
-      } else {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
+    alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+      'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+      table_def.name + ' table manually.');
+    return false;
+
+  }
+
+  // For drag-and-drop.
+
+  function handleDrop(e) {
+
+    if (typeof jQuery !== 'undefined') {
+      e.stopPropagation();
+      e.preventDefault();
+      if (pending) {
+        return opts.errors.pending();
       }
+      // var files = e.dataTransfer.files;
+      $('#drop-area').removeClass('dragenter');
+      // readFile(files);
+      opts.handle_file(e);
+    } else {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
     }
 
-    if (opts.drop.addEventListener) {
-      opts.drop.addEventListener('dragenter', handleDragover, false);
-      opts.drop.addEventListener('dragleave', handleDragleave);
-      opts.drop.addEventListener('dragover', handleDragover, false);
-      opts.drop.addEventListener('drop', handleDrop, false);
-      opts.choose.addEventListener('click', handleClick, false);
+  }
+
+  function handleDragover(e) {
+
+    if (typeof jQuery !== 'undefined') {
+      e.stopPropagation();
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      $('#drop-area').removeClass('dragdefault');
+      $('#drop-area').addClass('dragenter');
+    } else {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
+    }
+  }
+
+  function handleDragleave(e) {
+    if (typeof jQuery !== 'undefined') {
+      $('#drop-area').removeClass('dragenter');
+    } else {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
+    }
+  }
+
+  function handleClick(e) {
+    if (typeof jQuery !== 'undefined') {
+      $('#choose-file').click();
+    } else {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'Drag and drop not supported. Please use the \'Choose File\' button or copy-and-paste data.');
+    }
+  }
+
+  if (opts.drop.addEventListener) {
+    opts.drop.addEventListener('dragenter', handleDragover, false);
+    opts.drop.addEventListener('dragleave', handleDragleave);
+    opts.drop.addEventListener('dragover', handleDragover, false);
+    opts.drop.addEventListener('drop', handleDrop, false);
+    opts.choose.addEventListener('click', handleClick, false);
+  }
+
+  // For choosing a file using <input> (ie Choose File button).
+
+  function handleFile(e) {
+    var files;
+
+    if (e.type === 'drop') {
+      files = e.dataTransfer.files
+    } else if (e.type === 'change') {
+      files = e.target.files;
     }
 
-    // For choosing a file using <input> (ie Choose File button).
-
-    function handleFile(e) {
-      var files;
-
-      if (e.type === 'drop') {
-        files = e.dataTransfer.files
-      } else if (e.type === 'change') {
-        files = e.target.files;
-      }
-
-      if (window.FileReader) {
-        // FileReader is supported.
-        readFile(files);
-      } else {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'FileReader is not supported in this browser.');
-      }
+    if (window.FileReader) {
+      // FileReader is supported.
+      readFile(files);
+    } else {
+      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!', 'FileReader is not supported in this browser.');
     }
+  }
 
-    if (opts.choose.addEventListener) {
-      if (typeof jQuery !== 'undefined') {
-        $('#choose-file').change(opts.handle_file);
-      }
+  if (opts.choose.addEventListener) {
+    if (typeof jQuery !== 'undefined') {
+      $('#choose-file').change(opts.handle_file);
     }
-  };
+  }
+};

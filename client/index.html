@@ -1,292 +1,306 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Multi-Party Computation</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <script src="js/path.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-      crossorigin="anonymous">
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
-      integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
-      crossorigin="anonymous">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script
-      src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-      integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-      crossorigin="anonymous">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.js"></script>
-    <link rel="stylesheet" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.core.min.css">
-    <link rel="stylesheet" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.default.min.css">
-    <link rel="stylesheet" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.bootstrap.min.css">
-    <link rel="stylesheet" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.css">
-    <link rel="stylesheet" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.css">
-    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css"> -->
-    <script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
-    <link rel="stylesheet" href="css/ladda-themeless.min.css">
-    <link rel="stylesheet" media="screen" href="css/style.css">
-  </head>
-  <body>
-    <header>
-      <div class="container">
-        <h1>Boston Public Schools<br/>
-          <small>Online Transportation Challenge</small>
-        </h1>
-        <div id="logos">
-          <a href="https://www.bu.edu"><img src="img/bu.gif" alt="BU logo"/></a>
-        </div>
+<head>
+  <title>MPC-MED</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <script src="js/path.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+    crossorigin="anonymous">
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+    integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+    crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.js"></script>
+  <link rel="stylesheet" media="screen"
+        href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.core.min.css">
+  <link rel="stylesheet" media="screen"
+        href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.default.min.css">
+  <link rel="stylesheet" media="screen"
+        href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.bootstrap.min.css">
+  <link rel="stylesheet" media="screen"
+        href="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.css">
+  <link rel="stylesheet" media="screen"
+        href="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.css">
+  <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+  <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css"> -->
+  <script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
+  <link rel="stylesheet" href="css/ladda-themeless.min.css">
+  <link rel="stylesheet" media="screen" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>Multi-Party Computation for Medicine<br/>
+      <small>Data Submission</small>
+    </h1>
+    <div id="logos">
+      <a href="https://www.bu.edu"><img src="img/bu.gif" alt="BU logo"/></a>
+    </div>
+  </div>
+</header>
+<div id="shadow" class="ss-style-multitriangles"></div>
+<main id="content" class="container">
+  <!--       <section id="session-area" class="card">
+          <h2 class="text-center">Download a spreadsheet template</h2>
+          <p class="text-center">Use the files below to structure your own candidate spreadsheets. All spreadsheets submitted for evaluation must exactly match the format of these template and example files.</p>
+          <hr/>
+          <div class="row">
+            <div class="col-md-12">
+              <table style="width:100%;">
+                <tr><td><a href="bps-tc-template.xlsx">Download spreadsheet <b>template</b></a> (to be filled out by you)</td></tr>
+                <tr><td><a href="bps-tc-example.xlsx">Download spreadsheet <b>example</b> file</a> (to see an example of the spreadsheet format)</td></tr>
+                <tr><td><a href="bps-tc-invalid.xlsx">Download <b>invalid</b> spreadsheet example file</a> (to see examples of validation errors)</td></tr>
+                <tr><td><a href="bps-tc-complete.xlsx">Download a <b>full-scale complete spreadsheet</b> file</a> (generated using <a href="https://github.com/Data-Mechanics/bps-simulated-data">bps-simulated-data</a>)</td></tr>
+              </table>
+              <br/>
+            </div>
+          </div>
+        </section> -->
+  <section id="session-area" class="card">
+    <h2 class="text-center">Load your spreadsheet</h2>
+    <p class="text-center">Drag and drop your completed template file.</p>
+    <hr/>
+    <div class="row">
+      <div class="col-md-3">
+
       </div>
-    </header>
-    <div id="shadow" class="ss-style-multitriangles"></div>
-    <main id="content" class="container">
-      <section id="session-area" class="card">
-        <h2 class="text-center">Download a solution template</h2>
-        <p class="text-center">Use the files below to structure your own candidate solutions. All solutions submitted for evaluation must exactly match the format of these template and example files.</p>
-        <hr/>
-        <div class="row">
-          <div class="col-md-12">
-            <table style="width:100%;">
-              <tr><td><a href="bps-tc-template.xlsx">Download solution <b>template</b></a> (to be filled out by you)</td></tr>
-              <tr><td><a href="bps-tc-example.xlsx">Download solution <b>example</b> file</a> (to see an example of the solution format)</td></tr>
-              <tr><td><a href="bps-tc-invalid.xlsx">Download <b>invalid</b> solution example file</a> (to see examples of validation errors)</td></tr>
-              <tr><td><a href="bps-tc-complete.xlsx">Download a <b>full-scale complete solution</b> file</a> (generated using <a href="https://github.com/Data-Mechanics/bps-simulated-data">bps-simulated-data</a>)</td></tr>
+      <div class="col-md-6">
+        <div id="drop-area">
+          Drag and drop your spreadsheet file here
+          <br/>
+          <p>&mdash;or&mdash;</p><br/>
+          <button id="choose-file-button" class="btn btn-primary">Choose file</button>
+        </div>
+        <input type="file" id="choose-file" accept=".xlsx,.xls,.XLSX,.XLS,.csv">
+
+
+      </div>
+      <div class="col-md-3">
+
+      </div>
+
+
+      <div class="col-md-12">
+        <div id="simulation_view" style="display:none;">
+          <button class="btn btn-primary ladda-button btn-lg btn-block" onclick="simulate(workbook_js);">Process
+            spreadsheet
+          </button>
+          <br/>
+          <div class="clusterize">
+            <table>
+              <thead>
+              <tr>
+                <th style="font-weight:normal;">Click <b>Process spreadsheet</b> above to begin validating
+                  your data. This area will display the results.
+                </th>
+              </tr>
+              </thead>
             </table>
             <br/>
+            <div id="scrollArea" class="clusterize-scroll">
+              <table>
+                <tbody id="contentArea" class="clusterize-content">
+                <!--tr class="clusterize-no-data">
+                  <td style="text-align:left; text-decoration:underline;"><b>Simulation Progress and Results</b></td>
+                </tr-->
+                </tbody>
+              </table>
+            </div>
           </div>
+          <br/>
         </div>
-      </section>
-      <section id="session-area" class="card">
-        <h2 class="text-center">Load and evaluate your solution</h2>
-        <p class="text-center">Drag and drop your completed template file. Once the file has been loaded (<b>which may take a few minutes for complete solutions</b>) you can select your chosen criteria and evaluate your solution by clicking <b>Evaluate solution</b>.</p>
-        <hr/>
-        <div class="row">
-          <div class="col-md-4">
-            <div id="drop-area">
-              Drag and drop your solution file here
-              <br/>
-              <p>&mdash;or&mdash;</p><br/>
-              <button id="choose-file-button" class="btn btn-primary">Choose file</button>
-            </div>
-            <input type="file" id="choose-file" accept=".xlsx,.xls,.XLSX,.XLS,.csv">
-          </div>
-
-
-
-          <div id="criteria" class="col-md-8">
-            <span>Choose the criteria to use for evaluation:</span>
-            <div class="checkbox">
-              <label><input type="checkbox" value="">Student data matches challenge data.</label>
-            </div>
-            <div class="checkbox">
-              <label><input type="checkbox" value="">Student bus stop assignments adhere to constraints.</label>
-            </div>
-            <div class="checkbox">
-              <label><input type="checkbox" value="">Every student boards their assigned bus.</label>
-            </div>
-            <div class="checkbox">
-              <label><input type="checkbox" value="">Every student reaches their assigned school.</label>
-            </div>
-            <div class="checkbox">
-              <label><input type="checkbox" value="">Bus routes begin and end at bus yards.</label>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div id="simulation_view" style="display:none;">
-              <button class="btn btn-primary ladda-button btn-lg btn-block" onclick="simulate(workbook_js);">Evaluate solution</button>
-              <br/>
-              <div class="clusterize">
-                <table>
-                  <thead>
-                    <tr>
-                      <th style="font-weight:normal;">Click <b>Evaluate solution</b> above to begin validating and evaluating your data. This area will display the results of the evaluation.</th>
-                    </tr>
-                  </thead>
-                </table>
-                <br/>
-                <div id="scrollArea" class="clusterize-scroll">
-                  <table>
-                    <tbody id="contentArea" class="clusterize-content">
-                      <!--tr class="clusterize-no-data">
-                        <td style="text-align:left; text-decoration:underline;"><b>Simulation Progress and Results</b></td>
-                      </tr-->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <br/>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-        <div class="col-md-6">
-          <div>
-           <label class="control-label">Include biomarkers list here:</label>
-          </div>
-          <textarea id="biomarkers-list" placeholder="Separate biomarkers with new lines.">
-          </textarea>
-        </div>
-
-        <div class="col-md-6">
-          <label class="control-label" id="">Sample Column Header Name</label>
-          <input type="text" class="form-control" placeholder="">
-          <label class="control-label" id="">Well Location Column Header Name</label>
-          <input type="text" class="form-control" placeholder="">
-        </div>
-
       </div>
+    </div>
 
-      </section>
-      <section id="instructions" class="card">
-        <h2 class="text-center">Review your loaded solution</h2>
-        <p class="text-center">You may examine your loaded solution below, if you wish to do so.</p>
-        <span id="expand-table-button" class="arrow-down"></span>
-        <div id="tables-area">
-          <div id="spreadsheet_view"  style="display:none;">
-            <div id="buttons"></div>
-            <div id="hot" style="overflow:scroll" class="handsontable"></div>
-          </div>
-        </div>
-      </section>
-      <section class="card">
-        <h2 class="text-center">Submit and post your score</h2>
-        <p class="text-center">If you are satisfied with your evaluation, you may post your score for the record. The name you specified will appear once it is approved by a moderator.</p>
-        <hr/>
-        <div class="row">
-          <div class="col-md-6">
-          </div>
-          <div class="col-md-6">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <form>
-              <div class="row-fluid">
-                <table style="width:100%;">
-                  <tr>
-                    <td width="60px;"><b>Name* :</b>&nbsp;</td><td><input type="text" style="width:100%;" pattern="[a-zA-Z0-9\s]+" id="submitter_name"/></td>
-                    <td style="text-align:center; font-size:18px;"><div class="result"><span id="buses">#</span> buses</div></td>
-                    <td style="text-align:center; font-size:18px;"><div class="result"><span id="miles">#</span> miles</div></td>
-                  </tr>
-                  <tr>
-                    <td></td><td><small>* as it will appear in the scoreboard after approval</small></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                </table>
-                <br/>
-              </div>
-              <input type="hidden" id="buses_submit" value=""/>
-              <input type="hidden" id="miles_submit" value=""/>
-              <button type="submit" id="submit" class="disabled non-active btn btn-primary ladda-button btn-lg btn-block"  onclick="prepareSubmitData()">Submit</button>
-            </form>
-          </div>
-        </div>
-      </section>
-      <section class="card">
-        <h2 class="text-center">Scoreboard</h2>
-        <p class="text-center">The scores for past submissions can be viewed below.</p>
-        <hr/>
-        <div id="scoreboard_container" class="row">
-          <table id="scoreboard"></table>
-        </div>
-      </section>
-    </main>
-    <footer>
-      <div class="container">
-        View and contribute to the source code for this page <a href="https://github.com/Data-Mechanics/bps-challenge-score">on GitHub</a>.
+  </section>
+  <section id="instructions" class="card">
+    <h2 class="text-center">Review your loaded spreadsheet</h2>
+    <p class="text-center">You may examine your loaded spreadsheet below, if you wish to do so.</p>
+    <span id="expand-table-button" class="arrow-down"></span>
+    <div id="tables-area">
+      <div id="spreadsheet_view" style="display:none;">
+        <div id="buttons"></div>
+        <div id="hot" style="overflow:scroll" class="handsontable"></div>
       </div>
-    </footer>
-    <script src="js/data.structs.js"></script>
-    <script src="js/xlsx.full.min.js"></script>
-    <script src="js/dropsheet.js"></script>
-    <script>
-var scoreboard;
-var _target = document.getElementById('drop-area');
-var _choose = document.getElementById('choose-file-button');
-var spinner;
-var _workstart = function() { spinner = new Spinner().spin(_target); }
- var _workend = function (status) {
-          spinner.stop();
-        };
-var _badfile = function() { alertify.alert('This file does not appear to be a valid Excel file.', function(){}); /*spinner.stop();*/ };
-var _pending = function() { alertify.alert('Please wait until the current file is processed.', function(){}); };
-var _large = function(len, cb) { alertify.confirm("This file is " + (len/(1024*1024)).toFixed(2) + " MB and may take a few moments. Your browser may lock up during this process. Continue?", cb); };
-var _failed = function(e) { alertify.alert('This format is not supported.', function(){}); /*spinner.stop();*/ };
-var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
-  Handsontable.TextCell.renderer.apply(this, arguments);
-  $(td).css({'font-weight': 'bold'});
-};
-var make_buttons = function(sheetnames, cb) {
-  var $buttons = $('#buttons');
-  $buttons.html("");
-  sheetnames.forEach(function(s,idx) {
-    if (s in sheets) {
-      var button= $('<button/>').attr({ type:'button', name:'btn' +idx, text:s });
-      button.append(s);
-      button.click(function() { cb(idx); });
-      $buttons.append(button);
+    </div>
+  </section>
+  <!--  <section class="card">
+     <h2 class="text-center">Submit and post your score</h2>
+     <p class="text-center">If you are satisfied with your evaluation, you may post your score for the record. The name you specified will appear once it is approved by a moderator.</p>
+     <hr/>
+     <div class="row">
+       <div class="col-md-6">
+       </div>
+       <div class="col-md-6">
+       </div>
+     </div>
+     <div class="row">
+       <div class="col-md-12">
+         <form>
+           <div class="row-fluid">
+             <table style="width:100%;">
+               <tr>
+                 <td width="60px;"><b>Name* :</b>&nbsp;</td><td><input type="text" style="width:100%;" pattern="[a-zA-Z0-9\s]+" id="submitter_name"/></td>
+                 <td style="text-align:center; font-size:18px;"><div class="result"><span id="buses">#</span> buses</div></td>
+                 <td style="text-align:center; font-size:18px;"><div class="result"><span id="miles">#</span> miles</div></td>
+               </tr>
+               <tr>
+                 <td></td><td><small>* as it will appear in the scoreboard after approval</small></td>
+                 <td></td>
+                 <td></td>
+               </tr>
+             </table>
+             <br/>
+           </div>
+           <input type="hidden" id="buses_submit" value=""/>
+           <input type="hidden" id="miles_submit" value=""/>
+           <button type="submit" id="submit" class="disabled non-active btn btn-primary ladda-button btn-lg btn-block"  onclick="prepareSubmitData()">Submit</button>
+         </form>
+       </div>
+     </div>
+   </section>
+   <section class="card">
+     <h2 class="text-center">Scoreboard</h2>
+     <p class="text-center">The scores for past submissions can be viewed below.</p>
+     <hr/>
+     <div id="scoreboard_container" class="row">
+       <table id="scoreboard"></table>
+     </div>
+   </section> -->
+ </main>
+  <script src="js/data.structs.js"></script>
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/dropsheet.js"></script>
+  <script>
+    var scoreboard;
+    var _target = document.getElementById('drop-area');
+    var _choose = document.getElementById('choose-file-button');
+    var spinner;
+    var _workstart = function () {
+      spinner = new Spinner().spin(_target);
     }
-  });
-};
-var $window, availableWidth, availableHeight;
-var calculateSize = function () {
-  availableWidth = Math.max($('#drop').width(), 600);
-  availableHeight = Math.max($window.height() - 250, 400);
-};
-var _onsheet = function(json, cols, sheetnames, select_sheet_cb) {
-  make_buttons(sheetnames, select_sheet_cb);
-  calculateSize();
-  if (!json) json = []; /* add header row for table */
-  json.unshift(function(head){var o = {}; for(i=0;i!=head.length;++i) o[head[i]] = head[i]; return o;}(cols));
-  calculateSize();
-  $("#hot").handsontable({
-    data: json,
-    startRows: 5, startCols: 3, fixedRowsTop: 1,
-    stretchH: 'all',
-    rowHeaders: true,
-    columns: cols.map(function(x) { return {data:x}; }),
-    colHeaders: cols.map(function(x,i) { return XLS.utils.encode_col(i); }),
-    cells: function (r,c,p) { if(r === 0) this.renderer = boldRenderer; },
-    width: function () { return availableWidth; },
-    height: function () { return availableHeight; },
-    stretchH: 'all'
-  });
-};
-$(document).ready(function() {
-  $window = $(window);
-  $window.on('resize', calculateSize);
-  $( document ).on( "submitReadyEvent", function( event, arg1, arg2 ) {
-    console.log( "submission ready!" );
-    $("#submit").removeClass('disabled');
-    $("#submit").removeClass('non-active');
-    $("#submit").addClass('enabled');
+    var _workend = function (status) {
+      spinner.stop();
+      // Display table here.
+    };
+    var _badfile = function () {
+      alertify.alert('This file does not appear to be a valid Excel file.', function () {
+      });
+      /*spinner.stop();*/
+    };
+    var _pending = function () {
+      alertify.alert('Please wait until the current file is processed.', function () {
+      });
+    };
+    var _large = function (len, cb) {
+      alertify.confirm('This file is ' + (len / (1024 * 1024)).toFixed(2) + ' MB and may take a few moments. Your browser may lock up during this process. Continue?', cb);
+    };
+    var _failed = function (e) {
+      alertify.alert('This format is not supported.', function () {
+      });
+      /*spinner.stop();*/
+    };
+    var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.TextCell.renderer.apply(this, arguments);
+      $(td).css({'font-weight': 'bold'});
+    };
+    var make_buttons = function (sheetnames, cb) {
+      var $buttons = $('#buttons');
+      $buttons.html('');
+      sheetnames.forEach(function (s, idx) {
+        if (s in sheets) {
+          var button = $('<button/>').attr({type: 'button', name: 'btn' + idx, text: s});
+          button.append(s);
+          button.click(function () {
+            cb(idx);
+          });
+          $buttons.append(button);
+        }
+      });
+    };
+    var $window, availableWidth, availableHeight;
+    var calculateSize = function () {
+      availableWidth = Math.max($('#drop').width(), 600);
+      availableHeight = Math.max($window.height() - 250, 400);
+    };
+    var _onsheet = function (json, cols, sheetnames, select_sheet_cb) {
+      make_buttons(sheetnames, select_sheet_cb);
+      calculateSize();
+      if (!json) {
+        json = [];
+      }
+      /* add header row for table */
+      json.unshift(function (head) {
+        var o = {};
+        for (i = 0; i != head.length; ++i) {
+          o[head[i]] = head[i];
+        }
+        return o;
+      }(cols));
+      calculateSize();
+      $('#hot').handsontable({
+        data: json,
+        startRows: 5, startCols: 3, fixedRowsTop: 1,
+        stretchH: 'all',
+        rowHeaders: true,
+        columns: cols.map(function (x) {
+          return {data: x};
+        }),
+        colHeaders: cols.map(function (x, i) {
+          return XLS.utils.encode_col(i);
+        }),
+        cells: function (r, c, p) {
+          if (r === 0) {
+            this.renderer = boldRenderer;
+          }
+        },
+        width: function () {
+          return availableWidth;
+        },
+        height: function () {
+          return availableHeight;
+        },
+        stretchH: 'all'
+      });
+    };
+    $(document).ready(function () {
+      $window = $(window);
+      $window.on('resize', calculateSize);
+      $(document).on('submitReadyEvent', function (event, arg1, arg2) {
+        console.log('submission ready!');
+        $('#submit').removeClass('disabled');
+        $('#submit').removeClass('non-active');
+        $('#submit').addClass('enabled');
 
-  });
-});
-var clusterize = new Clusterize({scrollId:'scrollArea', contentId:'contentArea'});
-var workbook_js = DropSheet({
-  drop: _target, choose: _choose,
-  on: { workstart: _workstart, workend: _workend, sheet: _onsheet },
-  errors: { badfile: _badfile, pending: _pending, failed: _failed, large: _large }
-});
-$('#tables-area').hide();
-$('#expand-table-button').click(function (e) {
-  $('#tables-area').slideToggle();
-  $(e.target).toggleClass('flip');
-});
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
-  </body>
+      });
+    });
+    var clusterize = new Clusterize({scrollId: 'scrollArea', contentId: 'contentArea'});
+    var workbook_js = DropSheet({
+      drop: _target, choose: _choose,
+      on: {workstart: _workstart, workend: _workend, sheet: _onsheet},
+      errors: {badfile: _badfile, pending: _pending, failed: _failed, large: _large}
+    });
+    $('#tables-area').hide();
+    $('#expand-table-button').click(function (e) {
+      $('#tables-area').slideToggle();
+      $(e.target).toggleClass('flip');
+    });
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+</body>
 </html>
