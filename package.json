@@ -1,0 +1,19 @@
+{
+  "name": "mpc-med-client",
+  "version": "1.0.0",
+  "description": "User-facing client interface for data harmonization.",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/eslint client"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hicsail/mpc-med-client.git"
+  },
+  "author": "Boston University Software & Application Innovation Lab",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hicsail/mpc-med-client/issues"
+  },
+  "homepage": "https://github.com/hicsail/mpc-med-client#readme"
+}
