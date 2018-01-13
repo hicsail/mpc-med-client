@@ -104,7 +104,10 @@ var DropSheet = function DropSheet(opts) {
   function processWB(wb, type, sheetidx) {
 
     // Process first ws only by default
-    processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+    var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+    const cols = ['Value', 'Analyte', 'Location', 'Table Type'];
+
+    opts.on.sheet(processed_data, cols);
 
     if (sheetidx === null) {
       // Check tab names are valid.
@@ -160,7 +163,7 @@ var DropSheet = function DropSheet(opts) {
 
   function processWSOnly(ws) {
 
-    var sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
 
     //console.log(sheet_arr);
 
@@ -195,7 +198,7 @@ var DropSheet = function DropSheet(opts) {
     ];
 
     var table_rows = new Set(); // Indices of rows that contain analytes (aka table header rows).
-    var analytes_headers_coordinates = [];
+    var analytes_header_row_nums = [];
     var well_coordinates = [];
     var cell_val;
 
@@ -218,9 +221,10 @@ var DropSheet = function DropSheet(opts) {
         // Check for match with analyte list.
 
         for (var b = 0; b < analytes.length; b++) {
-          if (cell_val.indexOf(analytes[b]) !== -1) {
+          // TODO: change the parsing to work with well-by-well tables and aggregate patient tables. Currently only works when Location column present.
+          if (cell_val.indexOf(analytes[b]) !== -1 && (sheet_arr[i].indexOf('Location') !== -1 || sheet_arr[i].indexOf('LOCATION') !== -1)) {
             table_rows.add(i);
-            analytes_headers_coordinates.push({analyte: analytes[b], r: i, c: j});
+            analytes_header_row_nums.push({analyte: analytes[b], r: i, c: j});
           }
         }
 
@@ -232,38 +236,13 @@ var DropSheet = function DropSheet(opts) {
       }
     }
 
-    //console.log(analytes_headers_coordinates);
+    //console.log(analytes_header_row_nums);
     //console.log(well_coordinates);
 
     // WIP. Process sheet table by table.
 
     var formatted_data = [];
     var table_row_indices = Array.from(table_rows);
-
-    // for (var i = 0; i < table_row_indices.length - 1; i++) {
-    //   var entry = new Object();
-    //
-    //   // Collect table information.
-    //
-    //   var table_header;
-    //   if (table_row_indices[i] === 0) {
-    //     table_header = sheet_arr[table_row_indices[i]].join();
-    //   }
-    //
-    //   table_header = sheet_arr[table_row_indices[i] - 1].join();
-    //
-    //   entry['table_type'] = table_header;
-    //
-    //   // Loop through each table.
-    //
-    //   for (var j = table_row_indices[i] + 1; j < table_row_indices[i + 1]; j++) {
-    //     for (var k = 0; k < j.length; k++) {
-    //       cell_val = sheet_arr[j][k];
-    //     }
-    //   }
-    //
-    //   formatted_data.push(entry);
-    // }
 
     var table_number = 0;
     var entry;
@@ -273,28 +252,28 @@ var DropSheet = function DropSheet(opts) {
       var well_col_num = well_coordinates[i].c; // Column number of a given well location.
       var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
 
-      // Find table index corresponding to current well's data.
-      while (analyte_header_row > well_row_num) {
+      // Find table index corresponding to current well's data. May need to advance to next table.
+      while (table_number < table_row_indices.length - 1 && table_row_indices[table_number + 1] < well_row_num) {
         table_number++;
       }
 
       // Loop through columns indicated by analyte headers.
 
+      var table_type = sheet_arr[analyte_header_row - 1].join().replace(/,/g, '');
+
       for (j = well_col_num + 1; j < sheet_arr[analyte_header_row].length; j++) {
         entry = new Object();
         cell_val = sheet_arr[well_row_num][j];
-        entry['value'] = cell_val;
-        entry['analyte'] = sheet_arr[analyte_header_row][j];
-        entry['location'] = sheet_arr[well_row_num][well_col_num];
-        entry['table_type'] = sheet_arr[analyte_header_row - 1].join().replace(',', '');
+        entry['Value'] = cell_val;
+        entry['Analyte'] = sheet_arr[analyte_header_row][j];
+        entry['Location'] = sheet_arr[well_row_num][well_col_num];
+        entry['Table Type'] = table_type;
         formatted_data.push(entry);
       }
 
     }
 
-    console.log(formatted_data);
-
-    return true;
+    return formatted_data;
   }
 
   // Processes single XLSX JS worksheet and updates one Handsontable.

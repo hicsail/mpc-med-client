@@ -197,6 +197,8 @@
     var _workend = function (status) {
       spinner.stop();
       // Display table here.
+      $('#spreadsheet_view').show();
+
     };
     var _badfile = function () {
       alertify.alert('This file does not appear to be a valid Excel file.', function () {
@@ -238,8 +240,7 @@
       availableWidth = Math.max($('#drop').width(), 600);
       availableHeight = Math.max($window.height() - 250, 400);
     };
-    var _onsheet = function (json, cols, sheetnames, select_sheet_cb) {
-      make_buttons(sheetnames, select_sheet_cb);
+    var _onsheet = function (json, cols) {
       calculateSize();
       if (!json) {
         json = [];
