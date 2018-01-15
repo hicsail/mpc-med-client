@@ -197,10 +197,15 @@ var DropSheet = function DropSheet(opts) {
       'IL-28A'
     ];
 
-    var table_rows = new Set(); // Indices of rows that contain analytes (aka table header rows).
-    var analytes_header_row_nums = [];
-    var well_coordinates = [];
+    // Names of special columns on the spreadsheet.
+    const well_header_name = 'Location';
+    const analyte_header_name = 'Sample';
+
+    var table_rows = new Set(); // Indices of rows that contain analytes (aka table header rows). Size of this set should equal valid number of tables.
+    var analytes_header_coordinates = []; // Contains column numbers for analytes, indexed by table number.
+    var well_coordinates = []; // Stores row and column object for well locations.
     var cell_val;
+    var identifier_coordinates = []; // Stores row and column object for identifier locations.
 
     // Find rows with analytes.
     // Find well coordinates.
@@ -210,21 +215,26 @@ var DropSheet = function DropSheet(opts) {
 
         cell_val = sheet_arr[i][j];
 
-        if (!cell_val) {
+        if (!cell_val || cell_val === '') {
           continue;
         }
 
         if (typeof cell_val === 'string') {
-          cell_val = cell_val.toUpperCase();
+          cell_val = cell_val.toUpperCase().trim();
         }
 
         // Check for match with analyte list.
 
         for (var b = 0; b < analytes.length; b++) {
           // TODO: change the parsing to work with well-by-well tables and aggregate patient tables. Currently only works when Location column present.
-          if (cell_val.indexOf(analytes[b]) !== -1 && (sheet_arr[i].indexOf('Location') !== -1 || sheet_arr[i].indexOf('LOCATION') !== -1)) {
+          if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf('Location') !== -1 || sheet_arr[i].indexOf('LOCATION') !== -1)) {
             table_rows.add(i);
-            analytes_header_row_nums.push({analyte: analytes[b], r: i, c: j});
+            if (analytes_header_coordinates[table_rows.size - 1]) {
+              analytes_header_coordinates[table_rows.size - 1].push(j);
+            } else {
+              analytes_header_coordinates[table_rows.size - 1] = [j];
+            }
+
           }
         }
 
@@ -243,32 +253,41 @@ var DropSheet = function DropSheet(opts) {
 
     var formatted_data = [];
     var table_row_indices = Array.from(table_rows);
+    table_row_indices.sort(function (a, b) {
+      return a - b;
+    });
 
     var table_number = 0;
     var entry;
+
+    // Loop through rows that have well locations
     for (i = 0; i < well_coordinates.length; i++) {
 
       var well_row_num = well_coordinates[i].r; // Row number of a given well location.
       var well_col_num = well_coordinates[i].c; // Column number of a given well location.
-      var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
 
       // Find table index corresponding to current well's data. May need to advance to next table.
       while (table_number < table_row_indices.length - 1 && table_row_indices[table_number + 1] < well_row_num) {
         table_number++;
       }
 
-      // Loop through columns indicated by analyte headers.
+      var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
 
+      // Loop through columns indicated by analyte headers.
+      // Store analyte, value of cell, well location, and table type.
       var table_type = sheet_arr[analyte_header_row - 1].join().replace(/,/g, '');
 
-      for (j = well_col_num + 1; j < sheet_arr[analyte_header_row].length; j++) {
-        entry = new Object();
-        cell_val = sheet_arr[well_row_num][j];
-        entry['Value'] = cell_val;
-        entry['Analyte'] = sheet_arr[analyte_header_row][j];
-        entry['Location'] = sheet_arr[well_row_num][well_col_num];
-        entry['Table Type'] = table_type;
-        formatted_data.push(entry);
+      if (analytes_header_coordinates[table_number]) {
+        for (var j = 0; j < analytes_header_coordinates[table_number].length; j++) {
+          entry = new Object();
+          var col = analytes_header_coordinates[table_number][j];   // Column number of a particular analyte.
+          entry['Analyte'] = sheet_arr[analyte_header_row][col];
+          cell_val = sheet_arr[well_row_num][col];
+          entry['Value'] = cell_val;
+          entry['Location'] = sheet_arr[well_row_num][well_col_num];
+          entry['Table Type'] = table_type;
+          formatted_data.push(entry);
+        }
       }
 
     }
