@@ -105,7 +105,7 @@ var DropSheet = function DropSheet(opts) {
 
     // Process first ws only by default
     var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
-    const cols = ['Value', 'Analyte', 'Location', 'Table Type'];
+    const cols = ['Location', 'Identifier', 'Analyte', 'Value', 'Location', 'Table Type'];
 
     opts.on.sheet(processed_data, cols);
 
@@ -205,7 +205,7 @@ var DropSheet = function DropSheet(opts) {
     var analytes_header_coordinates = []; // Contains column numbers for analytes, indexed by table number.
     var well_coordinates = []; // Stores row and column object for well locations.
     var cell_val;
-    var identifier_coordinates = []; // Stores row and column object for identifier locations.
+    var identifier_coordinates = []; // Stores column numbers for identifiers, indexed by table number.
 
     // Find rows with analytes.
     // Find well coordinates.
@@ -226,9 +226,15 @@ var DropSheet = function DropSheet(opts) {
         // Check for match with analyte list.
 
         for (var b = 0; b < analytes.length; b++) {
-          // TODO: change the parsing to work with well-by-well tables and aggregate patient tables. Currently only works when Location column present.
-          if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf('Location') !== -1 || sheet_arr[i].indexOf('LOCATION') !== -1)) {
+          // TODO: change the parsing to work with both well-by-well tables and aggregate patient tables. Currently only works when Location column present.
+          if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(well_header_name) !== -1 || sheet_arr[i].indexOf(well_header_name.toUpperCase()) !== -1)) {
+
+            if (sheet_arr[i].indexOf(analyte_header_name) !== -1) {
+              identifier_coordinates[table_rows.size - 1] = sheet_arr[i].indexOf(analyte_header_name);
+            }
+
             table_rows.add(i);
+
             if (analytes_header_coordinates[table_rows.size - 1]) {
               analytes_header_coordinates[table_rows.size - 1].push(j);
             } else {
@@ -283,9 +289,12 @@ var DropSheet = function DropSheet(opts) {
           var col = analytes_header_coordinates[table_number][j];   // Column number of a particular analyte.
           entry['Analyte'] = sheet_arr[analyte_header_row][col];
           cell_val = sheet_arr[well_row_num][col];
+          var col2 = identifier_coordinates[table_number];
+          entry['Identifier'] = sheet_arr[well_row_num][col2];
           entry['Value'] = cell_val;
           entry['Location'] = sheet_arr[well_row_num][well_col_num];
           entry['Table Type'] = table_type;
+
           formatted_data.push(entry);
         }
       }
