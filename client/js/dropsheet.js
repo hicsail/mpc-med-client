@@ -105,8 +105,9 @@ var DropSheet = function DropSheet(opts) {
 
     // Process first ws only by default
     var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
-    const cols = ['Location', 'Identifier', 'Analyte', 'Value', 'Table Type'];
+    //const cols = ['Location', 'Identifier', 'Analyte', 'Value', 'Table Type'];
 
+    const cols = ['Analyte', 'Value', 'Table Type'];
     opts.on.sheet(processed_data, cols);
 
     if (sheetidx === null) {
@@ -161,11 +162,129 @@ var DropSheet = function DropSheet(opts) {
     return false; // There are some errors.
   }
 
-  function processWSOnly(ws) {
+  // Helper functions.
 
-    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+  function arrayMax(array) {
+    return array.reduce((a, b) => Math.max(a, b));
+  }
 
-    //console.log(sheet_arr);
+  function arrayMin(array) {
+    return array.reduce((a, b) => Math.min(a, b));
+  }
+
+  function numEntries(array) {
+    return array.reduce(
+      function (a, b) {
+        if (b !== '' && b !== null) {
+          return a + 1;
+        } else {
+          return a;
+        }
+      }, -1);
+  }
+
+  // Looks for rows with table headers / table types.
+  function findTypeRows(sheet_arr, row_info) {
+    var type_rows = [];
+
+    // Could hard-code search for table types if they are consistently named.
+
+    const types = [
+      'Median',
+      'Net MFI',
+      'Count',
+      'Result',
+      'Range',
+      'Units',
+      'Standard Expected Concentration',
+      'Control Range - Low',
+      'Control Range - High',
+      'Per Bead Count',
+      'Dilution Factor',
+      'Analyis Coefficients',
+      'R^2',
+      'Audit Logs',
+      'Warnings/Errors'
+    ];
+
+    // For now, assume that having 2 non-empty entries in a row, and containing 'DataType' in a cell is valid.
+
+    for (var i = 0; i < sheet_arr.length; i++) {
+      if (numEntries(sheet_arr[i]) === 2 && sheet_arr[i].indexOf('DataType:') !== -1) {
+        type_rows.push(i);
+      }
+    }
+
+    // Define start and end of each table.
+    var type_row_boundaries = [];
+
+    for (var i = 0; i < type_rows.length - 1; i++) {
+      type_row_boundaries.push({ start: type_rows[i], end: type_rows[i + 1] - 1, type: sheet_arr[type_rows[i]].join().replace(/,/g, '')});
+    }
+
+    type_row_boundaries.push({start: type_rows[type_rows.length - 1], end: sheet_arr.length, type: sheet_arr[type_rows[type_rows.length - 1]].join().replace(/,/g, '')});
+
+    row_info['type_rows'] = type_row_boundaries;
+
+    return row_info;
+  }
+
+  // Find indices of rows with well locations, and changes some table boundaries based on where well locations end.
+
+  function findWellRows(sheet_arr, row_info) {
+    var well_coordinates = [];
+    var cell_val;
+
+    for (var r = 0; r < row_info['type_rows'].length; r++) {
+
+      var table_end = row_info['type_rows'][r].start;
+
+      // Goes through a hypothetical 'table' and finds the new end for it.
+
+      for (var i = row_info['type_rows'][r].start; i < row_info['type_rows'][r].end; i++) {
+        for (var j = 0; j < sheet_arr[j].length; j++) {
+          cell_val = sheet_arr[i][j];
+          // Check for regex match with well coordinates.
+          var pattern = /\([0-9]+,[a-z][0-9]+\)/i;
+          if (pattern.exec(cell_val)) {
+            well_coordinates.push({r: i, c: j});
+            table_end = i;
+          }
+        }
+      }
+
+      // If relevant, find new end for table as defined by where well coordinates appear.
+      if (table_end !== row_info['type_rows'][r].start) {
+        row_info['type_rows'][r].end = table_end;
+      }
+    }
+
+    console.log('Wells', row_info);
+
+    row_info.well_coordinates = well_coordinates;
+
+    return row_info;
+  }
+
+  // Changes indices of rows to ignore.
+  function removeBlankRows(sheet_arr, row_info) {
+
+    for (var r = 0; r < row_info['type_rows'].length; r++) {
+      for (var i = row_info['type_rows'][r].end; i > row_info['type_rows'][r].start; i--) {
+        if (numEntries(sheet_arr[i]) > 0) {
+          break;
+        } else {
+          row_info['type_rows'][r].end--;
+        }
+      }
+    }
+
+    return row_info;
+  }
+
+  // Find rows with analytes.
+  function findAnalyteRows(sheet_arr, row_info) {
+    var analyte_rows_set = new Set();
 
     // Check for analytes and obtain analytes list.
 
@@ -199,107 +318,157 @@ var DropSheet = function DropSheet(opts) {
 
     // Names of special columns on the spreadsheet.
     const well_header_name = 'Location';
-    const analyte_header_name = 'Sample';
 
-    var table_rows = new Set(); // Indices of rows that contain analytes (aka table header rows). Size of this set should equal valid number of tables.
-    var analytes_header_coordinates = []; // Contains column numbers for analytes, indexed by table number.
-    var well_coordinates = []; // Stores row and column object for well locations.
     var cell_val;
-    var identifier_coordinates = []; // Stores column numbers for identifiers, indexed by table number.
 
-    // Find rows with analytes.
-    // Find well coordinates.
+    for (var r = 0; r < row_info['type_rows'].length; r++) {
 
-    for (var i = 0; i < sheet_arr.length; i++) {
-      for (var j = 0; j < sheet_arr[i].length; j++) {
+      for (var i = row_info['type_rows'][r].start; i < row_info['type_rows'][r].end; i++) {
 
-        cell_val = sheet_arr[i][j];
+        for (var j = 0; j < sheet_arr[i].length; j++) {
 
-        if (!cell_val || cell_val === '') {
-          continue;
-        }
+          cell_val = sheet_arr[i][j];
 
-        if (typeof cell_val === 'string') {
-          cell_val = cell_val.toUpperCase().trim();
-        }
-
-        // Check for match with analyte list.
-
-        for (var b = 0; b < analytes.length; b++) {
-          // TODO: change the parsing to work with both well-by-well tables and aggregate patient tables. Currently only works when Location column present.
-          if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(well_header_name) !== -1 || sheet_arr[i].indexOf(well_header_name.toUpperCase()) !== -1)) {
-
-            if (sheet_arr[i].indexOf(analyte_header_name) !== -1) {
-              identifier_coordinates[table_rows.size - 1] = sheet_arr[i].indexOf(analyte_header_name);
-            }
-
-            table_rows.add(i);
-
-            if (analytes_header_coordinates[table_rows.size - 1]) {
-              analytes_header_coordinates[table_rows.size - 1].push(j);
-            } else {
-              analytes_header_coordinates[table_rows.size - 1] = [j];
-            }
-
+          if (!cell_val || cell_val === '') {
+            continue;
           }
-        }
 
-        // Check for regex match with well coordinates.
-        var pattern = /\(1,[a-z][0-9]\)/i;
-        if (pattern.exec(cell_val)) {
-          well_coordinates.push({r: i, c: j});
+          if (typeof cell_val === 'string') {
+            cell_val = cell_val.toUpperCase().trim();
+          }
+
+          for (var b = 0; b < analytes.length; b++) {
+
+            if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(well_header_name) !== -1 || sheet_arr[i].indexOf(well_header_name.toUpperCase()) !== -1)) {
+
+              // May want to keep track of other things here.
+              analyte_rows_set.add(i);
+              row_info['type_rows'][r].start = i;
+
+              // Map analytes to col indices.
+              if (row_info['type_rows'][r]['analyte_cols']) {
+                row_info['type_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+              } else {
+                row_info['type_rows'][r]['analyte_cols'] = [];
+                row_info['type_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+              }
+
+            }
+          }
         }
       }
     }
 
-    //console.log(analytes_header_row_nums);
-    //console.log(well_coordinates);
-
-    // WIP. Process sheet table by table.
-
-    var formatted_data = [];
-    var table_row_indices = Array.from(table_rows);
-    table_row_indices.sort(function (a, b) {
+    var analyte_rows = Array.from(analyte_rows_set);
+    analyte_rows.sort(function (a, b) {
       return a - b;
     });
 
-    var table_number = 0;
+    row_info.analyte_rows = analyte_rows;
+
+    return row_info;
+  }
+
+  function processWSOnly(ws) {
+
+    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+
+    var row_info = new Object();
+
+    row_info = findTypeRows(sheet_arr, row_info);
+
+    console.log(row_info);
+
+    row_info = findWellRows(sheet_arr, row_info);
+
+    //row_info = removeBlankRows(sheet_arr, row_info);
+
+    row_info = findAnalyteRows(sheet_arr, row_info);
+
+    console.log(row_info);
+
+    // Names of special columns on the spreadsheet.
+    const well_header_name = 'Location';
+    const analyte_header_name = 'Sample';
+
+    // Build up object.
+
+    var formatted_data = [];
     var entry;
 
-    // Loop through rows that have well locations
-    for (i = 0; i < well_coordinates.length; i++) {
+    for (var r = 0; r < row_info.type_rows.length; r++) {
 
-      var well_row_num = well_coordinates[i].r; // Row number of a given well location.
-      var well_col_num = well_coordinates[i].c; // Column number of a given well location.
+      for (var i = row_info['type_rows'][r].start; i < row_info['type_rows'][r].end; i++) {
 
-      // Find table index corresponding to current well's data. May need to advance to next table.
-      while (table_number < table_row_indices.length - 1 && table_row_indices[table_number + 1] < well_row_num) {
-        table_number++;
-      }
+        // Table does not have analyte-based info, can be ignored.
+        if (!row_info['type_rows'][r]['analyte_cols']) {
+          continue;
+        }
 
-      var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
+        for (var b = 0; b < row_info['type_rows'][r]['analyte_cols'].length; b++) {
 
-      // Loop through columns indicated by analyte headers.
-      // Store analyte, value of cell, well location, and table type.
-      var table_type = sheet_arr[analyte_header_row - 1].join().replace(/,/g, '');
-
-      if (analytes_header_coordinates[table_number]) {
-        for (var j = 0; j < analytes_header_coordinates[table_number].length; j++) {
+          var analyte_name = row_info['type_rows'][r]['analyte_cols'][b]['analyte'];
+          var analyte_col = row_info['type_rows'][r]['analyte_cols'][b]['col'];
           entry = new Object();
-          var col = analytes_header_coordinates[table_number][j];   // Column number of a particular analyte.
-          entry['Analyte'] = sheet_arr[analyte_header_row][col];
-          cell_val = sheet_arr[well_row_num][col];
-          var col2 = identifier_coordinates[table_number];
-          entry['Identifier'] = sheet_arr[well_row_num][col2];
-          entry['Value'] = cell_val;
-          entry['Location'] = sheet_arr[well_row_num][well_col_num];
-          entry['Table Type'] = table_type;
+          entry['Analyte'] = analyte_name;
+          var cell_val = sheet_arr[i][analyte_col];
+          if (!isNaN(cell_val)) {
+            entry['Value'] = Number(cell_val);
+          } else {
+            entry['Value'] = cell_val;
+          }
+
+          entry['Table Type'] = row_info['type_rows'][r]['type'];
 
           formatted_data.push(entry);
+
         }
       }
-
     }
+    //
+    //
+    // var table_row_indices = Array.from(table_rows);
+    // table_row_indices.sort(function (a, b) {
+    //   return a - b;
+    // });
+    //
+    // var table_number = 0;
+    // var entry;
+    //
+    // // Loop through rows that have well locations
+    // for (i = 0; i < well_coordinates.length; i++) {
+    //
+    //   var well_row_num = well_coordinates[i].r; // Row number of a given well location.
+    //   var well_col_num = well_coordinates[i].c; // Column number of a given well location.
+    //
+    //   // Find table index corresponding to current well's data. May need to advance to next table.
+    //   while (table_number < table_row_indices.length - 1 && table_row_indices[table_number + 1] < well_row_num) {
+    //     table_number++;
+    //   }
+    //
+    //   var analyte_header_row = table_row_indices[table_number]; // Current row number of a row with analytes.
+    //
+    //   // Loop through columns indicated by analyte headers.
+    //   // Store analyte, value of cell, well location, and table type.
+    //   var table_type = sheet_arr[analyte_header_row - 1].join().replace(/,/g, '');
+    //
+    //   if (analytes_header_coordinates[table_number]) {
+    //     for (var j = 0; j < analytes_header_coordinates[table_number].length; j++) {
+    //       entry = new Object();
+    //       var col = analytes_header_coordinates[table_number][j];   // Column number of a particular analyte.
+    //       entry['Analyte'] = sheet_arr[analyte_header_row][col];
+    //       cell_val = sheet_arr[well_row_num][col];
+    //       var col2 = identifier_coordinates[table_number];
+    //       entry['Identifier'] = sheet_arr[well_row_num][col2];
+    //       entry['Value'] = cell_val;
+    //       entry['Location'] = sheet_arr[well_row_num][well_col_num];
+    //       entry['Table Type'] = table_type;
+    //
+    //       formatted_data.push(entry);
+    //     }
+    //   }
+    //
+    // }
 
     return formatted_data;
   }
