@@ -98,6 +98,8 @@ footer { bottom:0; left:0; right:0; height:80px; padding:15px; background:#fff; 
   max-width: 950px;
 }
 
+/* For table area. */
+
 #expand-table-button {
   width: 100%;
   height: 35px;
@@ -109,8 +111,21 @@ footer { bottom:0; left:0; right:0; height:80px; padding:15px; background:#fff; 
   background-color: #F3F3F3;
 }
 
+#download-json-area {
+  margin-top: 30px;
+  text-align:center;
+  margin-bottom: 30px;
+}
+
 #tables-area h4 {
   margin-top: 30px;
+}
+
+#tables-area button {
+  margin-top: -25px;
+  padding-left: 25px;
+  padding-right: 25px;
+  border-radius: 20px;
 }
 
 hr {
@@ -146,7 +161,7 @@ form .form-group-lg label {
   padding-top: 50px;
 }
 
-/* for drop area */
+/* For drop area. */
 
 #drop-area {
   border: 3px dashed #CCC;
@@ -186,8 +201,7 @@ form .form-group-lg label {
   visibility: hidden;
 }
 
-
-/* for alerts and submission history*/
+/* For alerts and submission history.*/
 .ajs-header img {
   padding-right: 0.5em;
 }

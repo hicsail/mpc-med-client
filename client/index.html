@@ -45,7 +45,7 @@
 <body>
 <header>
   <div class="container">
-    <h1>Multi-Party Computation for Medicine<br/>
+    <h1>Biomarker Parsing<br/>
       <small>Data Submission</small>
     </h1>
     <div id="logos">
@@ -73,7 +73,7 @@
         </section> -->
   <section id="session-area" class="card">
     <h2 class="text-center">Load your spreadsheet</h2>
-    <p class="text-center">Drag and drop your completed template file.</p>
+    <p class="text-center">Drag and drop your completed file.</p>
     <hr/>
     <div class="row">
       <div class="col-md-3">
@@ -86,7 +86,7 @@
           <p>&mdash;or&mdash;</p><br/>
           <button id="choose-file-button" class="btn btn-primary">Choose file</button>
         </div>
-        <input type="file" id="choose-file" accept=".xlsx,.xls,.XLSX,.XLS,.csv">
+        <input type="file" id="choose-file" accept=".xlsx,.xls,.XLSX,.XLS,.csv,.CSV">
 
 
       </div>
@@ -133,12 +133,18 @@
     <p class="text-center">You may examine your loaded spreadsheet below, if you wish to do so.</p>
     <span id="expand-table-button" class="arrow-down"></span>
     <div id="tables-area">
+      <div id="download-json-area">
+        <button type="button" class="btn btn-default btn-lg" id="download-json-button">
+          <span class="glyphicon glyphicon-save" aria-hidden="true"></span> Download as JSON
+        </button>
+      </div>
       <div id="spreadsheet_view" style="display:none;">
         <div id="buttons"></div>
         <div id="hot" style="overflow:scroll" class="handsontable"></div>
       </div>
     </div>
   </section>
+
   <!--  <section class="card">
      <h2 class="text-center">Submit and post your score</h2>
      <p class="text-center">If you are satisfied with your evaluation, you may post your score for the record. The name you specified will appear once it is approved by a moderator.</p>
@@ -186,18 +192,26 @@
   <script src="js/data.structs.js"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script src="js/dropsheet.js"></script>
+  <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
   <script>
     var scoreboard;
     var _target = document.getElementById('drop-area');
     var _choose = document.getElementById('choose-file-button');
     var spinner;
     var _workstart = function () {
+
+      if ($('#tables-area').css('display') !== 'none') {
+        $('#tables-area').hide();
+        $('#download-json-area').hide();
+        $('#expand-table-button').toggleClass('flip');
+      }
       spinner = new Spinner().spin(_target);
     }
     var _workend = function (status) {
       spinner.stop();
       // Display table here.
       $('#spreadsheet_view').show();
+      $('#download-json-area').show();
 
     };
     var _badfile = function () {
@@ -254,6 +268,9 @@
         return o;
       }(cols));
       calculateSize();
+
+      // TODO: Loop through table types to dynamically generate tables.
+
       $('#hot').handsontable({
         data: json,
         startRows: 5, startCols: 3, fixedRowsTop: 1,
@@ -278,6 +295,13 @@
         },
         stretchH: 'all'
       });
+
+      $('#download-json-button').click(function (e) {
+        var output = JSON.stringify(json, null, 4);
+        var blob = new Blob([output], {type: "application/json"});
+        saveAs(blob, 'output.json');
+
+      });
     };
     $(document).ready(function () {
       $window = $(window);
@@ -301,6 +325,7 @@
       $('#tables-area').slideToggle();
       $(e.target).toggleClass('flip');
     });
+
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
 </body>
