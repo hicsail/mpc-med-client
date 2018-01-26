@@ -183,9 +183,39 @@ var DropSheet = function DropSheet(opts) {
   }
 
 
+  function getType(row) {
+    const types = [
+      'Median',
+      'Net MFI',
+      'Count',
+      'Result',
+      'Range',
+      'Units',
+      'Standard Expected Concentration',
+      'Control Range - Low',
+      'Control Range - High',
+      'Per Bead Count',
+      'Dilution Factor',
+      'Analysis Coefficients',
+      'R^2',
+      'Audit Logs',
+      'Warnings/Errors'
+    ];
+
+    for (var t = 0; t < types.length; t++) {
+      for (var i = 0; i < row.length; i++) {
+        if (row[i].toUpperCase() === types[t].toUpperCase()) {
+          return types[t];
+        }
+      }
+    }
+
+    return null;
+  }
+
   // Looks for rows containing data type of interest using known table types.
   function findTypeRowsUsingTitles(sheet_arr, row_info) {
-    var type_rows = [];
+    var table_rows = [];
 
     // Could hard-code search for table types if they are consistently named.
 
@@ -215,22 +245,34 @@ var DropSheet = function DropSheet(opts) {
 
         for (var t = 0; t < types.length; t++) {
           if (sheet_arr[i][j].toUpperCase() === types[t].toUpperCase()) {
-            type_rows.push(i);
+            table_rows.push(i);
           }
         }
       }
     }
 
     // Define start and end of each table.
-    var type_row_boundaries = [];
+    var table_row_boundaries = [];
 
-    for (var i = 0; i < type_rows.length - 1; i++) {
-      type_row_boundaries.push({ start: type_rows[i], end: type_rows[i + 1] - 1, type: sheet_arr[type_rows[i]].join().replace(/,/g, '')});
+    for (var i = 0; i < table_rows.length - 1; i++) {
+      //table_row_boundaries.push({ start: table_rows[i] + 1, end: table_rows[i + 1] - 1, type: sheet_arr[table_rows[i]].join().replace(/,/g, '').trim()});
+      table_row_boundaries.push({
+        start: table_rows[i] + 1,
+        end: table_rows[i + 1] - 1,
+        type: getType(sheet_arr[table_rows[i]])
+      });
     }
 
-    type_row_boundaries.push({start: type_rows[type_rows.length - 1], end: sheet_arr.length - 1, type: sheet_arr[type_rows[type_rows.length - 1]].join().replace(/,/g, '')});
+    console.log(table_rows[table_rows.length - 1]);
 
-    row_info['type_rows'] = type_row_boundaries;
+    //table_row_boundaries.push({start: table_rows[table_rows.length - 1] + 1, end: sheet_arr.length - 1, type: sheet_arr[table_rows[table_rows.length - 1]].join().replace(/,/g, '').trim()});
+    table_row_boundaries.push({
+      start: table_rows[table_rows.length - 1] + 1,
+      end: sheet_arr.length - 1,
+      type: getType(sheet_arr[table_rows.length - 1])
+    });
+
+    row_info['table_rows'] = table_row_boundaries;
 
     return row_info;
   }
@@ -238,26 +280,34 @@ var DropSheet = function DropSheet(opts) {
 
   // Looks for rows with table headers / table types.
   function findTypeRows(sheet_arr, row_info) {
-    var type_rows = [];
+    var table_rows = [];
 
     // For now, assume that having 2 non-empty entries in a row, and containing 'DataType' in a cell is valid.
 
     for (var i = 0; i < sheet_arr.length; i++) {
       if (numEntries(sheet_arr[i]) === 2 && sheet_arr[i].indexOf('DataType:') !== -1) {
-        type_rows.push(i);
+        table_rows.push(i);
       }
     }
 
     // Define start and end of each table.
-    var type_row_boundaries = [];
+    var table_row_boundaries = [];
 
-    for (var i = 0; i < type_rows.length - 1; i++) {
-      type_row_boundaries.push({ start: type_rows[i], end: type_rows[i + 1] - 1, type: sheet_arr[type_rows[i]].join().replace(/,/g, '')});
+    for (var i = 0; i < table_rows.length - 1; i++) {
+      table_row_boundaries.push({
+        start: table_rows[i] + 1,
+        end: table_rows[i + 1] - 1,
+        type: sheet_arr[table_rows[i]].join().replace(/,/g, '').trim()
+      });
     }
 
-    type_row_boundaries.push({start: type_rows[type_rows.length - 1], end: sheet_arr.length - 1, type: sheet_arr[type_rows[type_rows.length - 1]].join().replace(/,/g, '')});
+    table_row_boundaries.push({
+      start: table_rows[table_rows.length - 1] + 1,
+      end: sheet_arr.length - 1,
+      type: sheet_arr[table_rows[table_rows.length - 1]].join().replace(/,/g, '').trim()
+    });
 
-    row_info['type_rows'] = type_row_boundaries;
+    row_info['table_rows'] = table_row_boundaries;
 
     return row_info;
   }
@@ -269,13 +319,13 @@ var DropSheet = function DropSheet(opts) {
     var well_coordinates = [];
     var cell_val;
 
-    for (var r = 0; r < row_info['type_rows'].length; r++) {
+    for (var r = 0; r < row_info['table_rows'].length; r++) {
 
-      var table_end = row_info['type_rows'][r].start;
+      var table_end = row_info['table_rows'][r].start;
 
       // Goes through a hypothetical 'table' and finds the new end for it.
 
-      for (var i = row_info['type_rows'][r].start; i <= row_info['type_rows'][r].end; i++) {
+      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
         for (var j = 0; j < sheet_arr[i].length; j++) {
           cell_val = sheet_arr[i][j];
           // Check for regex match with well coordinates.
@@ -288,8 +338,8 @@ var DropSheet = function DropSheet(opts) {
       }
 
       // If relevant, find new end for table as defined by where well coordinates appear.
-      if (table_end !== row_info['type_rows'][r].start) {
-        row_info['type_rows'][r].end = table_end;
+      if (table_end !== row_info['table_rows'][r].start) {
+        row_info['table_rows'][r].end = table_end;
       }
     }
 
@@ -298,6 +348,7 @@ var DropSheet = function DropSheet(opts) {
     return row_info;
   }
 
+  // Helper function that determines if a particular row contains valid well location.
   function getWellCoordinates(well_coordinates, row_index) {
     for (var i = 0; i < well_coordinates.length; i++) {
       if (well_coordinates[i].r === row_index) {
@@ -305,22 +356,6 @@ var DropSheet = function DropSheet(opts) {
       }
     }
     return {r: -1, c: -1};
-  }
-
-  // Changes indices of rows to ignore.
-  function removeBlankRows(sheet_arr, row_info) {
-
-    for (var r = 0; r < row_info['type_rows'].length; r++) {
-      for (var i = row_info['type_rows'][r].end; i > row_info['type_rows'][r].start; i--) {
-        if (numEntries(sheet_arr[i]) > 0) {
-          break;
-        } else {
-          row_info['type_rows'][r].end--;
-        }
-      }
-    }
-
-    return row_info;
   }
 
   // Find rows with analytes.
@@ -362,9 +397,9 @@ var DropSheet = function DropSheet(opts) {
 
     var cell_val;
 
-    for (var r = 0; r < row_info['type_rows'].length; r++) {
+    for (var r = 0; r < row_info['table_rows'].length; r++) {
 
-      for (var i = row_info['type_rows'][r].start; i <= row_info['type_rows'][r].end; i++) {
+      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
         for (var j = 0; j < sheet_arr[i].length; j++) {
 
@@ -384,14 +419,14 @@ var DropSheet = function DropSheet(opts) {
 
               // May want to keep track of other things here.
               analyte_rows_set.add(i);
-              row_info['type_rows'][r].start = i;
+              row_info['table_rows'][r].start = i;
 
               // Map analytes to col indices.
-              if (row_info['type_rows'][r]['analyte_cols']) {
-                row_info['type_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+              if (row_info['table_rows'][r]['analyte_cols']) {
+                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
               } else {
-                row_info['type_rows'][r]['analyte_cols'] = [];
-                row_info['type_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+                row_info['table_rows'][r]['analyte_cols'] = [];
+                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
               }
 
             }
@@ -419,8 +454,15 @@ var DropSheet = function DropSheet(opts) {
     const well_header_name = 'Location';
     const identifier_header_name = 'Sample';
 
-    for (var r = 0; r <= row_info['type_rows'].length; r++) {
-      for (var i = row_info['type_rows'][r].start; i <= row_info['type_rows'][r].end; r++) {
+    for (var r = 0; r < row_info['table_rows'].length; r++) {
+      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
+
+        for (var j = 0; j < sheet_arr[i].length; j++) {
+          // Look for identifier header coordinates.
+          if (sheet_arr[i][j].trim().toUpperCase() === identifier_header_name.toUpperCase()) {
+            row_info['table_rows'][r]['identifier_col'] = {'col': j, 'row': i};
+          }
+        }
 
       }
     }
@@ -436,13 +478,9 @@ var DropSheet = function DropSheet(opts) {
 
     row_info = findTypeRowsUsingTitles(sheet_arr, row_info);
 
-    console.log(row_info);
-
-    //row_info = findMiscHeaders(sheet_arr, row_info);
+    row_info = findMiscHeaders(sheet_arr, row_info);
 
     row_info = findWellRows(sheet_arr, row_info);
-
-    //row_info = removeBlankRows(sheet_arr, row_info);
 
     row_info = findAnalyteRows(sheet_arr, row_info);
 
@@ -457,25 +495,34 @@ var DropSheet = function DropSheet(opts) {
     var formatted_data = [];
     var entry;
 
-    for (var r = 0; r < row_info.type_rows.length; r++) {
+    // Process each table.
 
-      var row_well_coordinates = getWellCoordinates(row_info['well_coordinates']);
+    for (var r = 0; r < row_info.table_rows.length; r++) {
 
-      for (var i = row_info['type_rows'][r].start; i <= row_info['type_rows'][r].end; i++) {
+      var identifier_col = row_info['table_rows'][r]['identifier_col'];
 
-        // Table does not have analyte-based info, can be ignored.
-        if (!row_info['type_rows'][r]['analyte_cols']) {
+      // For each table, loop through rows.
+
+      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
+
+        // Table does not have analyte-based info; this table will not be output and can be ignored.
+        if (!row_info['table_rows'][r]['analyte_cols']) {
           continue;
         }
 
-        for (var b = 0; b < row_info['type_rows'][r]['analyte_cols'].length; b++) {
+        var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
 
-          var analyte_name = row_info['type_rows'][r]['analyte_cols'][b]['analyte'];
-          var analyte_col = row_info['type_rows'][r]['analyte_cols'][b]['col'];
+        for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
+
+          var analyte_name = row_info['table_rows'][r]['analyte_cols'][b]['analyte'];
+          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['col'];
           entry = new Object();
           entry['Analyte'] = analyte_name;
           var cell_val = sheet_arr[i][analyte_col];
-          if (!isNaN(cell_val)) {
+          if (cell_val === '') {
+            entry['Value'] = '';
+          }
+          else if (!isNaN(cell_val)) {
             entry['Value'] = Number(cell_val);
           } else {
             entry['Value'] = cell_val;
@@ -485,10 +532,11 @@ var DropSheet = function DropSheet(opts) {
             entry['Location'] = sheet_arr[i][row_well_coordinates.c];
           }
 
-          entry['Table Type'] = row_info['type_rows'][r]['type'];
+          entry['Table Type'] = row_info['table_rows'][r]['type'];
 
-          // TODO: Update this.
-          entry['Identifier'] = 'TBD';
+          if (!identifier_col) {
+            entry['Identifier'] = sheet_arr[identifier_col['row']][identifier_col['col']];
+          }
 
           formatted_data.push(entry);
 
@@ -499,118 +547,119 @@ var DropSheet = function DropSheet(opts) {
     return formatted_data;
   }
 
-  // Processes single XLSX JS worksheet and updates one Handsontable.
-  function processWS(ws, table_def, table) {
-    // console.log("WORKSHEET", ws, table_def, table);
-
-    // Clear existing values in case user is submitting updated sheet after error.
-    //table.clear();
-
-    // Default range for input section of spreadsheet, obtained from tables.json.
-    var sheet_start = table_def.excel[0].start;
-    var sheet_end = table_def.excel[0].end;
-
-    // Ranges for handsontable.
-    var table_start = XLS.utils.decode_cell(sheet_start);
-    var table_end = XLS.utils.decode_cell(sheet_end);
-    var num_rows = table_end.r - table_start.r + 1;
-    var num_cols = table_end.c - table_start.c + 1;
-
-    var changes = [];
-
-    // Keys of XLSX js worksheet.
-    var ws_keys = Object.keys(ws);
-
-    // Default settings for matrix boundary.
-    var matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
-
-    // console.log("MATRIX", matrix)
-    // Check if default range is correct based on top row name.
-    if (!(ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})] !== undefined &&
-        ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})].v === table_def.excel[0].firstrow)) {
-
-
-      var found_row = false;
-
-      // If table is not in expected position, get new boundaries.
-      for (var i = 0; i < ws_keys.length; i++) {
-        var key = ws_keys[i];
-
-        // Parse for location of top row name.
-        if (ws[key].v !== undefined && ws[key].v !== null && table_def.excel[0].firstrow.toString() === ws[key].v.toString()) {
-          // Update to boundaries of table (start, end, etc.)
-          var new_start_row = Number(XLS.utils.decode_cell(key).r);
-          var new_start_col = Number(XLS.utils.decode_cell(key).c) + 1;
-          sheet_start = XLSX.utils.encode_cell({r: new_start_row, c: new_start_col});
-          sheet_end = XLSX.utils.encode_cell({r: new_start_row + num_rows - 1, c: new_start_col + num_cols - 1});
-          table_start = XLSX.utils.decode_cell(sheet_start);
-          table_end = XLSX.utils.decode_cell(sheet_end);
-          matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
-          found_row = true;
-          break;
-        }
-      }
-
-      // If expected row name not found.
-      if (!found_row) {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-          'Spreadsheet format does not match original template. Please copy-and-paste or type data into the ' +
-          table_def.name + ' table manually.');
-        return false;
-      }
-    }
-
-    // Filter array to get rid of undefined values/any headers.
-    for (i = 0; i < matrix.length; i++) {
-      matrix[i] = matrix[i].filter(function (cell) {
-        return cell !== undefined && cell !== null && !isNaN(Number(cell));
-      })
-    }
-
-    // Parsing sometimes leads to empty rows, remove these.
-    for (var j = matrix.length - 1; j >= 0; j--) {
-      if (matrix[j].length === 0) {
-        matrix.splice(j, 1);
-      }
-    }
-
-
-    // Check that number of expected numeric cells is correct. Otherwise alert user.
-    // Row and column checks.
-    if (matrix.length !== num_rows) {
-      alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-        'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
-        table_def.name + ' table manually.');
-      return false;
-    }
-
-    for (i = 0; i < matrix.length; i++) {
-      if (matrix[i].length !== num_cols) {
-        alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-          'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
-          table_def.name + ' table manually.');
-        return false;
-      }
-    }
-
-    // For each sheet, set value in handsontable.
-    for (var r = 0; r < num_rows; r++) {
-      for (var c = 0; c < num_cols; c++) {
-        changes.push([r, c, matrix[r][c]]);
-      }
-    }
-
-    if (changes.length > 0) {
-      table.setDataAtCell(changes);
-      return true;
-    }
-
-    alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
-      'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
-      table_def.name + ' table manually.');
-    return false;
-
-  }
+  //
+  // // Processes single XLSX JS worksheet and updates one Handsontable.
+  // function processWS(ws, table_def, table) {
+  //   // console.log("WORKSHEET", ws, table_def, table);
+  //
+  //   // Clear existing values in case user is submitting updated sheet after error.
+  //   //table.clear();
+  //
+  //   // Default range for input section of spreadsheet, obtained from tables.json.
+  //   var sheet_start = table_def.excel[0].start;
+  //   var sheet_end = table_def.excel[0].end;
+  //
+  //   // Ranges for handsontable.
+  //   var table_start = XLS.utils.decode_cell(sheet_start);
+  //   var table_end = XLS.utils.decode_cell(sheet_end);
+  //   var num_rows = table_end.r - table_start.r + 1;
+  //   var num_cols = table_end.c - table_start.c + 1;
+  //
+  //   var changes = [];
+  //
+  //   // Keys of XLSX js worksheet.
+  //   var ws_keys = Object.keys(ws);
+  //
+  //   // Default settings for matrix boundary.
+  //   var matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
+  //
+  //   // console.log("MATRIX", matrix)
+  //   // Check if default range is correct based on top row name.
+  //   if (!(ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})] !== undefined &&
+  //       ws[XLS.utils.encode_cell({r: table_start.r, c: table_start.c - 1})].v === table_def.excel[0].firstrow)) {
+  //
+  //
+  //     var found_row = false;
+  //
+  //     // If table is not in expected position, get new boundaries.
+  //     for (var i = 0; i < ws_keys.length; i++) {
+  //       var key = ws_keys[i];
+  //
+  //       // Parse for location of top row name.
+  //       if (ws[key].v !== undefined && ws[key].v !== null && table_def.excel[0].firstrow.toString() === ws[key].v.toString()) {
+  //         // Update to boundaries of table (start, end, etc.)
+  //         var new_start_row = Number(XLS.utils.decode_cell(key).r);
+  //         var new_start_col = Number(XLS.utils.decode_cell(key).c) + 1;
+  //         sheet_start = XLSX.utils.encode_cell({r: new_start_row, c: new_start_col});
+  //         sheet_end = XLSX.utils.encode_cell({r: new_start_row + num_rows - 1, c: new_start_col + num_cols - 1});
+  //         table_start = XLSX.utils.decode_cell(sheet_start);
+  //         table_end = XLSX.utils.decode_cell(sheet_end);
+  //         matrix = XLSX.utils.sheet_to_json(ws, {raw: true, range: table_start.r, header: 1});
+  //         found_row = true;
+  //         break;
+  //       }
+  //     }
+  //
+  //     // If expected row name not found.
+  //     if (!found_row) {
+  //       alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+  //         'Spreadsheet format does not match original template. Please copy-and-paste or type data into the ' +
+  //         table_def.name + ' table manually.');
+  //       return false;
+  //     }
+  //   }
+  //
+  //   // Filter array to get rid of undefined values/any headers.
+  //   for (i = 0; i < matrix.length; i++) {
+  //     matrix[i] = matrix[i].filter(function (cell) {
+  //       return cell !== undefined && cell !== null && !isNaN(Number(cell));
+  //     })
+  //   }
+  //
+  //   // Parsing sometimes leads to empty rows, remove these.
+  //   for (var j = matrix.length - 1; j >= 0; j--) {
+  //     if (matrix[j].length === 0) {
+  //       matrix.splice(j, 1);
+  //     }
+  //   }
+  //
+  //
+  //   // Check that number of expected numeric cells is correct. Otherwise alert user.
+  //   // Row and column checks.
+  //   if (matrix.length !== num_rows) {
+  //     alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+  //       'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+  //       table_def.name + ' table manually.');
+  //     return false;
+  //   }
+  //
+  //   for (i = 0; i < matrix.length; i++) {
+  //     if (matrix[i].length !== num_cols) {
+  //       alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+  //         'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+  //         table_def.name + ' table manually.');
+  //       return false;
+  //     }
+  //   }
+  //
+  //   // For each sheet, set value in handsontable.
+  //   for (var r = 0; r < num_rows; r++) {
+  //     for (var c = 0; c < num_cols; c++) {
+  //       changes.push([r, c, matrix[r][c]]);
+  //     }
+  //   }
+  //
+  //   if (changes.length > 0) {
+  //     table.setDataAtCell(changes);
+  //     return true;
+  //   }
+  //
+  //   alertify.alert('<img src=\'/images/cancel.png\' alt=\'Error\'>Error!',
+  //     'Spreadsheet format does not match original template, or there are empty cells, or non-numeric data. Please copy-and-paste or type data into the ' +
+  //     table_def.name + ' table manually.');
+  //   return false;
+  //
+  // }
 
   // For drag-and-drop.
 

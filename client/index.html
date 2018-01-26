@@ -296,6 +296,8 @@
         stretchH: 'all'
       });
 
+      // Downloadable as json.
+
       $('#download-json-button').click(function (e) {
         var output = JSON.stringify(json, null, 4);
         var blob = new Blob([output], {type: "application/json"});
