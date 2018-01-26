@@ -190,17 +190,23 @@ var DropSheet = function DropSheet(opts) {
       'Count',
       'Result',
       'Range',
+      'Avg Net MFI',
+      'Avg Result',
+      'Avg Range',
+      '% CV Replicates',
+      '% Recovery',
+      'Comments',
       'Units',
       'Standard Expected Concentration',
+      'Control Expected Concentration',
       'Control Range - Low',
       'Control Range - High',
       'Per Bead Count',
-      'Dilution Factor',
+      'Analysis Types',
       'Analysis Coefficients',
-      'R^2',
-      'Audit Logs',
-      'Warnings/Errors'
+      'R^2'
     ];
+
 
     for (var t = 0; t < types.length; t++) {
       for (var i = 0; i < row.length; i++) {
@@ -225,16 +231,21 @@ var DropSheet = function DropSheet(opts) {
       'Count',
       'Result',
       'Range',
+      'Avg Net MFI',
+      'Avg Result',
+      'Avg Range',
+      '% CV Replicates',
+      '% Recovery',
+      'Comments',
       'Units',
       'Standard Expected Concentration',
+      'Control Expected Concentration',
       'Control Range - Low',
       'Control Range - High',
       'Per Bead Count',
-      'Dilution Factor',
+      'Analysis Types',
       'Analysis Coefficients',
-      'R^2',
-      'Audit Logs',
-      'Warnings/Errors'
+      'R^2'
     ];
 
     for (var i = 0; i < sheet_arr.length; i++) {
@@ -262,8 +273,6 @@ var DropSheet = function DropSheet(opts) {
         type: getType(sheet_arr[table_rows[i]])
       });
     }
-
-    console.log(table_rows[table_rows.length - 1]);
 
     //table_row_boundaries.push({start: table_rows[table_rows.length - 1] + 1, end: sheet_arr.length - 1, type: sheet_arr[table_rows[table_rows.length - 1]].join().replace(/,/g, '').trim()});
     table_row_boundaries.push({
@@ -394,6 +403,7 @@ var DropSheet = function DropSheet(opts) {
 
     // Names of special columns on the spreadsheet.
     const well_header_name = 'Location';
+    const identifier_header_name = 'Sample';
 
     var cell_val;
 
@@ -415,7 +425,7 @@ var DropSheet = function DropSheet(opts) {
 
           for (var b = 0; b < analytes.length; b++) {
 
-            if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(well_header_name) !== -1 || sheet_arr[i].indexOf(well_header_name.toUpperCase()) !== -1)) {
+            if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(identifier_header_name) !== -1 || sheet_arr[i].indexOf(identifier_header_name.toUpperCase()) !== -1)) {
 
               // May want to keep track of other things here.
               analyte_rows_set.add(i);
@@ -446,7 +456,7 @@ var DropSheet = function DropSheet(opts) {
   }
 
 
-  // Look for headers, such as reagent etc.
+  // Look for headers, such as sample, reagent etc.
   function findMiscHeaders(sheet_arr, row_info) {
 
     // Header names of interest.
@@ -457,11 +467,9 @@ var DropSheet = function DropSheet(opts) {
     for (var r = 0; r < row_info['table_rows'].length; r++) {
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
-        for (var j = 0; j < sheet_arr[i].length; j++) {
-          // Look for identifier header coordinates.
-          if (sheet_arr[i][j].trim().toUpperCase() === identifier_header_name.toUpperCase()) {
-            row_info['table_rows'][r]['identifier_col'] = {'col': j, 'row': i};
-          }
+
+        if (sheet_arr[i].indexOf(identifier_header_name) !== -1) {
+          row_info['table_rows'][r]['identifier_col'] =  {'row': i, 'col': sheet_arr[i].indexOf(identifier_header_name)} ;
         }
 
       }
@@ -501,16 +509,19 @@ var DropSheet = function DropSheet(opts) {
 
       var identifier_col = row_info['table_rows'][r]['identifier_col'];
 
+      // Table does not have analyte-based info; this table will not be output and can be ignored.
+      if (!row_info['table_rows'][r]['analyte_cols']) {
+        continue;
+      }
+
       // For each table, loop through rows.
 
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
-        // Table does not have analyte-based info; this table will not be output and can be ignored.
-        if (!row_info['table_rows'][r]['analyte_cols']) {
-          continue;
-        }
-
+        // Row of table may contain well coordinates.
         var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
+
+        // Check all possible analytes.
 
         for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
 
@@ -534,8 +545,8 @@ var DropSheet = function DropSheet(opts) {
 
           entry['Table Type'] = row_info['table_rows'][r]['type'];
 
-          if (!identifier_col) {
-            entry['Identifier'] = sheet_arr[identifier_col['row']][identifier_col['col']];
+          if (identifier_col !== null) {
+            entry['Identifier'] = sheet_arr[i][identifier_col['col']];
           }
 
           formatted_data.push(entry);
