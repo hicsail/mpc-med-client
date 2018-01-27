@@ -549,7 +549,9 @@ var DropSheet = function DropSheet(opts) {
             entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
           }
 
-          formatted_data.push(entry);
+          if (!(entry['Identifier'] === '' && entry['Value'] === '')) {
+            formatted_data.push(entry);
+          }
 
         }
       }
