@@ -105,7 +105,7 @@ var DropSheet = function DropSheet(opts) {
 
     // Process first ws only by default
     var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
-    const cols = ['Location', 'Identifier', 'Analyte', 'Value', 'Table Type'];
+    const cols = ['Location', 'Identifier', 'Analyte', 'Value'];
 
     opts.on.sheet(processed_data, cols);
 
@@ -433,10 +433,10 @@ var DropSheet = function DropSheet(opts) {
 
               // Map analytes to col indices.
               if (row_info['table_rows'][r]['analyte_cols']) {
-                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'c': j});
               } else {
                 row_info['table_rows'][r]['analyte_cols'] = [];
-                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'col': j});
+                row_info['table_rows'][r]['analyte_cols'].push({'analyte': analytes[b], 'c': j});
               }
 
             }
@@ -469,7 +469,7 @@ var DropSheet = function DropSheet(opts) {
 
 
         if (sheet_arr[i].indexOf(identifier_header_name) !== -1) {
-          row_info['table_rows'][r]['identifier_col'] =  {'row': i, 'col': sheet_arr[i].indexOf(identifier_header_name)} ;
+          row_info['table_rows'][r]['identifier_coordinates'] =  {r: i, c: sheet_arr[i].indexOf(identifier_header_name)} ;
         }
 
       }
@@ -492,8 +492,6 @@ var DropSheet = function DropSheet(opts) {
 
     row_info = findAnalyteRows(sheet_arr, row_info);
 
-    console.log(row_info);
-
     // Names of special columns on the spreadsheet.
     const well_header_name = 'Location';
     const analyte_header_name = 'Sample';
@@ -507,7 +505,9 @@ var DropSheet = function DropSheet(opts) {
 
     for (var r = 0; r < row_info.table_rows.length; r++) {
 
-      var identifier_col = row_info['table_rows'][r]['identifier_col'];
+      var identifier_coordinates = row_info['table_rows'][r]['identifier_coordinates'];
+
+      var table_type = row_info['table_rows'][r]['type'];
 
       // Table does not have analyte-based info; this table will not be output and can be ignored.
       if (!row_info['table_rows'][r]['analyte_cols']) {
@@ -526,7 +526,7 @@ var DropSheet = function DropSheet(opts) {
         for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
 
           var analyte_name = row_info['table_rows'][r]['analyte_cols'][b]['analyte'];
-          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['col'];
+          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['c'];
           entry = new Object();
           entry['Analyte'] = analyte_name;
           var cell_val = sheet_arr[i][analyte_col];
@@ -543,10 +543,10 @@ var DropSheet = function DropSheet(opts) {
             entry['Location'] = sheet_arr[i][row_well_coordinates.c];
           }
 
-          entry['Table Type'] = row_info['table_rows'][r]['type'];
+          entry['Table Type'] = table_type;
 
-          if (identifier_col !== null) {
-            entry['Identifier'] = sheet_arr[i][identifier_col['col']];
+          if (identifier_coordinates !== null) {
+            entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
           }
 
           formatted_data.push(entry);

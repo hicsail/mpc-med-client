@@ -73,7 +73,7 @@
         </section> -->
   <section id="session-area" class="card">
     <h2 class="text-center">Load your spreadsheet</h2>
-    <p class="text-center">Drag and drop your completed file.</p>
+    <p class="text-center">Drag and drop your spreadsheet file. Accepts XLS, XLSX, and CSV.</p>
     <hr/>
     <div class="row">
       <div class="col-md-3">
@@ -188,93 +188,124 @@
        <table id="scoreboard"></table>
      </div>
    </section> -->
- </main>
-  <script src="js/data.structs.js"></script>
-  <script src="js/xlsx.full.min.js"></script>
-  <script src="js/dropsheet.js"></script>
-  <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
-  <script>
-    var scoreboard;
-    var _target = document.getElementById('drop-area');
-    var _choose = document.getElementById('choose-file-button');
-    var spinner;
-    var _workstart = function () {
+</main>
+<script src="js/data.structs.js"></script>
+<script src="js/xlsx.full.min.js"></script>
+<script src="js/dropsheet.js"></script>
+<script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+<script>
+  var scoreboard;
+  var _target = document.getElementById('drop-area');
+  var _choose = document.getElementById('choose-file-button');
+  var spinner;
+  var _workstart = function () {
 
-      if ($('#tables-area').css('display') !== 'none') {
-        $('#tables-area').hide();
-        $('#download-json-area').hide();
-        $('#expand-table-button').toggleClass('flip');
-      }
-      spinner = new Spinner().spin(_target);
+    if ($('#tables-area').css('display') !== 'none') {
+      $('#tables-area').hide();
+      $('#download-json-area').hide();
+      $('#expand-table-button').toggleClass('flip');
     }
-    var _workend = function (status) {
-      spinner.stop();
-      // Display table here.
-      $('#spreadsheet_view').show();
-      $('#download-json-area').show();
+    spinner = new Spinner().spin(_target);
+  }
+  var _workend = function (status) {
+    spinner.stop();
+    // Display table here.
+    $('#spreadsheet_view').show();
+    $('#download-json-area').show();
 
-    };
-    var _badfile = function () {
-      alertify.alert('This file does not appear to be a valid Excel file.', function () {
-      });
-      /*spinner.stop();*/
-    };
-    var _pending = function () {
-      alertify.alert('Please wait until the current file is processed.', function () {
-      });
-    };
-    var _large = function (len, cb) {
-      alertify.confirm('This file is ' + (len / (1024 * 1024)).toFixed(2) + ' MB and may take a few moments. Your browser may lock up during this process. Continue?', cb);
-    };
-    var _failed = function (e) {
-      alertify.alert('This format is not supported.', function () {
-      });
-      /*spinner.stop();*/
-    };
-    var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
-      Handsontable.TextCell.renderer.apply(this, arguments);
-      $(td).css({'font-weight': 'bold'});
-    };
-    var make_buttons = function (sheetnames, cb) {
-      var $buttons = $('#buttons');
-      $buttons.html('');
-      sheetnames.forEach(function (s, idx) {
-        if (s in sheets) {
-          var button = $('<button/>').attr({type: 'button', name: 'btn' + idx, text: s});
-          button.append(s);
-          button.click(function () {
-            cb(idx);
-          });
-          $buttons.append(button);
-        }
-      });
-    };
-    var $window, availableWidth, availableHeight;
-    var calculateSize = function () {
-      availableWidth = Math.max($('#drop').width(), 600);
-      availableHeight = Math.max($window.height() - 250, 400);
-    };
-    var _onsheet = function (json, cols) {
-      calculateSize();
-      if (!json) {
-        json = [];
+  };
+  var _badfile = function () {
+    alertify.alert('This file does not appear to be a valid Excel file.', function () {
+    });
+    /*spinner.stop();*/
+  };
+  var _pending = function () {
+    alertify.alert('Please wait until the current file is processed.', function () {
+    });
+  };
+  var _large = function (len, cb) {
+    alertify.confirm('This file is ' + (len / (1024 * 1024)).toFixed(2) + ' MB and may take a few moments. Your browser may lock up during this process. Continue?', cb);
+  };
+  var _failed = function (e) {
+    alertify.alert('This format is not supported.', function () {
+    });
+    /*spinner.stop();*/
+  };
+  var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.TextCell.renderer.apply(this, arguments);
+    $(td).css({'font-weight': 'bold'});
+  };
+  var make_buttons = function (sheetnames, cb) {
+    var $buttons = $('#buttons');
+    $buttons.html('');
+    sheetnames.forEach(function (s, idx) {
+      if (s in sheets) {
+        var button = $('<button/>').attr({type: 'button', name: 'btn' + idx, text: s});
+        button.append(s);
+        button.click(function () {
+          cb(idx);
+        });
+        $buttons.append(button);
       }
+    });
+  };
+  var $window, availableWidth, availableHeight;
+  var calculateSize = function () {
+    availableWidth = Math.max($('#drop').width(), 600);
+    availableHeight = Math.max($window.height()/4, 400);
+  };
+  var _onsheet = function (json, cols) {
+    calculateSize();
+    if (!json) {
+      json = [];
+    }
+
+    calculateSize();
+
+    // TODO: Loop through table types to dynamically generate tables.
+
+    const table_type_label = 'Table Type';
+    var table_json = new Object();
+    for (var i = 0; i < json.length; i++) {
+      var table_type = json[i][table_type_label];
+      var entry = new Object();
+      for (var col in json[i]) {
+        if (col !== table_type_label) {
+          entry[col] = json[i][col];
+        }
+      }
+
+      if (!table_json[table_type]) {
+        table_json[table_type] = [];
+      }
+
+      table_json[table_type].push(entry);
+
+    }
+
+    for (var table in table_json) {
+
       /* add header row for table */
-      json.unshift(function (head) {
+      table_json[table].unshift(function (head) {
         var o = {};
         for (i = 0; i != head.length; ++i) {
           o[head[i]] = head[i];
         }
         return o;
       }(cols));
-      calculateSize();
 
-      // TODO: Loop through table types to dynamically generate tables.
 
-      $('#hot').handsontable({
-        data: json,
-        startRows: 5, startCols: 3, fixedRowsTop: 1,
-        stretchH: 'all',
+      // Make id for table that is html-friendly.
+      var table_name = table.toLowerCase().replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'');
+      var parent_div = $('#tables-area');
+
+      // Append title and table.
+
+      $('<h4>' + table + '</h4>').appendTo(parent_div);
+
+      $("<div id='#hot-" + table_name + "'></div>").appendTo(parent_div).handsontable({
+        data: table_json[table],
+        startRows: 4, startCols: 3, fixedRowsTop: 1,
         rowHeaders: true,
         columns: cols.map(function (x) {
           return {data: x};
@@ -296,39 +327,69 @@
         stretchH: 'all'
       });
 
-      // Downloadable as json.
+      $('<br>').appendTo(parent_div);
+    }
 
-      $('#download-json-button').click(function (e) {
-        var output = JSON.stringify(json, null, 4);
-        var blob = new Blob([output], {type: "application/json"});
-        saveAs(blob, 'output.json');
+    console.log(table_json);
 
-      });
-    };
-    $(document).ready(function () {
-      $window = $(window);
-      $window.on('resize', calculateSize);
-      $(document).on('submitReadyEvent', function (event, arg1, arg2) {
-        console.log('submission ready!');
-        $('#submit').removeClass('disabled');
-        $('#submit').removeClass('non-active');
-        $('#submit').addClass('enabled');
+    // $('#hot').handsontable({
+    //   data: json,
+    //   startRows: 5, startCols: 3, fixedRowsTop: 1,
+    //   stretchH: 'all',
+    //   rowHeaders: true,
+    //   columns: cols.map(function (x) {
+    //     return {data: x};
+    //   }),
+    //   colHeaders: cols.map(function (x, i) {
+    //     return XLS.utils.encode_col(i);
+    //   }),
+    //   cells: function (r, c, p) {
+    //     if (r === 0) {
+    //       this.renderer = boldRenderer;
+    //     }
+    //   },
+    //   width: function () {
+    //     return availableWidth;
+    //   },
+    //   height: function () {
+    //     return availableHeight;
+    //   },
+    //   stretchH: 'all'
+    // });
 
-      });
+    // Downloadable as json.
+
+    $('#download-json-button').click(function (e) {
+      var output = JSON.stringify(json, null, 4);
+      var blob = new Blob([output], {type: 'application/json'});
+      saveAs(blob, 'output.json');
+
     });
-    var clusterize = new Clusterize({scrollId: 'scrollArea', contentId: 'contentArea'});
-    var workbook_js = DropSheet({
-      drop: _target, choose: _choose,
-      on: {workstart: _workstart, workend: _workend, sheet: _onsheet},
-      errors: {badfile: _badfile, pending: _pending, failed: _failed, large: _large}
-    });
-    $('#tables-area').hide();
-    $('#expand-table-button').click(function (e) {
-      $('#tables-area').slideToggle();
-      $(e.target).toggleClass('flip');
-    });
+  };
+  $(document).ready(function () {
+    $window = $(window);
+    $window.on('resize', calculateSize);
+    $(document).on('submitReadyEvent', function (event, arg1, arg2) {
+      console.log('submission ready!');
+      $('#submit').removeClass('disabled');
+      $('#submit').removeClass('non-active');
+      $('#submit').addClass('enabled');
 
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+    });
+  });
+  var clusterize = new Clusterize({scrollId: 'scrollArea', contentId: 'contentArea'});
+  var workbook_js = DropSheet({
+    drop: _target, choose: _choose,
+    on: {workstart: _workstart, workend: _workend, sheet: _onsheet},
+    errors: {badfile: _badfile, pending: _pending, failed: _failed, large: _large}
+  });
+  $('#tables-area').hide();
+  $('#expand-table-button').click(function (e) {
+    $('#tables-area').slideToggle();
+    $(e.target).toggleClass('flip');
+  });
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
 </body>
 </html>
