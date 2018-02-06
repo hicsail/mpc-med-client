@@ -215,6 +215,17 @@
 
     calculateSize();
 
+    var download_json = JSON.parse(JSON.stringify(json));
+
+    // Make object downloadable as json.
+
+    $('#download-json-button').click(function (e) {
+      var output = JSON.stringify(download_json, null, 4);
+      var blob = new Blob([output], {type: 'application/json'});
+      saveAs(blob, 'output.json');
+
+    });
+
 
     // Generate Handsontable tables.
 
@@ -265,14 +276,7 @@
       $('<br>').appendTo(parent_div);
     }
 
-    // Make object downloadable as json.
 
-    $('#download-json-button').click(function (e) {
-      var output = JSON.stringify(json, null, 4);
-      var blob = new Blob([output], {type: 'application/json'});
-      saveAs(blob, 'output.json');
-
-    });
   };
   $(document).ready(function () {
     $window = $(window);
