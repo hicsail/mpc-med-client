@@ -523,6 +523,18 @@ var DropSheet = function DropSheet(opts) {
 
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
+        // Ignore blank rows.
+        if (numEntries(sheet_arr[i]) === 0) {
+          continue;
+        }
+
+        // Ignore header row.
+
+       if (row_info['table_rows'][r].header_row === i) {
+          continue;
+       }
+
+
         // Row of table may contain well coordinates.
         var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
 
