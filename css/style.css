@@ -1,0 +1,272 @@
+
+/*
+body { margin:0; font-family:Helvetica,Arial,FreeSans,sans-serif; color:#454545; font-size:14px; position:relative; }
+ul,ol { margin-bottom:1.5em; clear:left; }
+li { margin-bottom:1.3em; }
+ul.tight li { margin-bottom:0.3em; }
+ul { padding-left:30px; }
+ul ul { margin-top:1.5em; }
+.warning { border:1px solid #D4D8EB; padding:10px; background:#F0F1F8; box-shadow:2px 2px 7px #777; margin-bottom:40px; }
+.warning strong { background:#747477; color:#FFF; border-radius:4px; padding:2px 4px; }
+.handsontable { margin-bottom:10px; color:#000; z-index:2; font-size:12px; }
+.handsontable li { margin-bottom:0; }
+button, .button {
+  font-family:Helvetica,Arial,FreeSans,sans-serif;
+  display:inline-block;
+  margin:0 2px 0 0;
+  font-size:13px;
+  line-height:24px;
+  text-align:center;
+  white-space:nowrap;
+  vertical-align:middle;
+  cursor:pointer;
+  border:none;
+  -moz-user-select:none;
+  background-color:#bbb;
+  color:white;
+}
+*/
+
+#criteria { opacity:0.5; }
+#criteria > span { font-size:22px; }
+
+label { font-size:18px; }
+
+.result { padding: 10px; }
+
+input#submitter_name { padding-left:5px; padding-right:5px; font-size:18px; }
+
+#drop {
+  border:2px dashed #bbb; -moz-border-radius:10px; -webkit-border-radius:10px;
+  border-radius:5px; padding:50px 25px 50px 25px; margin-bottom:20px; text-align:center;
+  width:100%; font-size:20pt; color:#bbb;
+}
+
+body {
+  background-color: #EEE;
+  color: #555;
+}
+
+h1, h2, h3 {
+  color: #333;
+}
+
+h1 {
+  font-size: 40px;
+  font-weight: bold;
+  line-height: 32px;
+  color: rgba(51, 51, 51, 0.8);
+  text-shadow: 1px 4px 6px #fff, 0 0 0 #000, 1px 4px 6px #fff;
+  margin-top: 50px;
+}
+
+::-moz-selection {
+  background: #5af;
+  color: #fff;
+  text-shadow: none;
+}
+
+::selection {
+  background: #5af;
+  color: #fff;
+  text-shadow: none;
+}
+
+.non-active {
+  pointer-events: none;
+  cursor: default;
+}
+
+header, #shadow { position:absolute; top:0; left:0; right:0; height:170px; background:#fff; z-index:2; }
+#shadow { box-shadow:0 2px 4px 0 rgba(170,170,170,.80); z-index:-1; }
+header h1, header #logos { display:inline-block; }
+header #logos { float:right; line-height:170px; }
+header #logos img { margin-left:50px; }
+footer { bottom:0; left:0; right:0; height:80px; padding:15px; background:#fff; z-index:2; box-shadow:4px 0 4px 2px rgba(170,170,170,.80); z-index:-1; }
+
+#content {
+  margin-top: 270px;
+}
+
+.card {
+  background: #fff;
+  box-shadow: 0 2px 4px 0 rgba(170, 170, 170, .80);
+  padding: 30px;
+  margin-bottom: 35px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 950px;
+}
+
+/* For table area. */
+
+#expand-table-button {
+  width: 100%;
+  height: 35px;
+  display: block;
+  margin-top: 35px;
+}
+
+#expand-table-button:hover {
+  background-color: #F3F3F3;
+}
+
+#download-json-area {
+  margin-top: 30px;
+  text-align:center;
+  margin-bottom: 30px;
+}
+
+#tables-area h4 {
+  margin-top: 30px;
+}
+
+#tables-area button {
+  margin-top: -25px;
+  padding-left: 25px;
+  padding-right: 25px;
+  border-radius: 20px;
+}
+
+hr {
+  display: block;
+  width: 100%;
+  border-top: 1px solid #d6d6d6;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+hr.short {
+  width: 30%;
+}
+
+form .form-group-lg label {
+  font-size: 18px;
+}
+
+.panel-heading h3 {
+  text-align: center;
+}
+
+.panel-body {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.instructions {
+  font-size: large;
+}
+
+.page-footer {
+  padding-top: 50px;
+}
+
+/* For drop area. */
+
+#drop-area {
+  border: 3px dashed #CCC;
+  border-radius: 8px;
+  padding: 30px;
+  background-color: #F0F0F0;
+  transition: border-color 0.5s;
+  text-align: center;
+  display: block;
+  vertical-align: middle;
+  font-size: 22px;
+  width: 100%;
+}
+
+#drop-area p {
+  font-size: 13px;
+  margin-top: 25px;
+}
+
+#drop-area button {
+  margin-top: -25px;
+  padding-left: 25px;
+  padding-right: 25px;
+  border-radius: 20px;
+}
+
+#drop-area.dragenter {
+  border-color: #A6DE2A;
+}
+
+#drop-area.dragdefault {
+  border-color: #666;
+}
+
+#choose-file {
+  border: none;
+  visibility: hidden;
+}
+
+/* For alerts and submission history.*/
+.ajs-header img {
+  padding-right: 0.5em;
+}
+
+.success img {
+  padding-right: 0.5em;
+}
+
+.error img {
+  padding-right: 0.5em;
+}
+
+/* for qtip */
+.qtip-red {
+  color: #5B1515;
+  background-color: #FDD3D0;
+}
+
+.qtip-red img {
+  padding-right: 0.5em;
+}
+
+/* Triangles, based on https://tympanus.net/codrops/2013/10/03/a-collection-of-separator-styles/ */
+#shadow::after {
+  position: absolute;
+  content: '';
+  pointer-events: none;
+}
+
+.ss-style-multitriangles::after {
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  -webkit-transform: translateX(-50%) rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.ss-style-multitriangles::after {
+  bottom: -25px;
+  z-index: 1;
+  background: inherit;
+  box-shadow: -50px 50px 0 #fff, 50px -50px 0 #fff, 2px 2px 4px 0 rgba(170, 170, 170, .80), -48px 52px 4px 0 rgba(170, 170, 170, .80), 52px -48px 4px 0 rgba(170, 170, 170, .80);
+}
+
+#validation-errors li {
+  margin-bottom: 10px;
+}
+
+#validation-errors span {
+  color: rgb(240, 71, 68);
+}
+
+#submission-history li {
+  color: #4F8A10;
+  margin-bottom: 10px;
+}
+
+/* Arrow down, from https://css-tricks.com/snippets/css/css-triangle/ */
+.arrow-down {
+  background: transparent url('../img/expand.png') no-repeat center;
+  cursor: pointer;
+}
+
+.flip {
+  transform: scaleY(-1);
+}
+
+/* eof */
