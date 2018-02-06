@@ -21,7 +21,6 @@
     crossorigin="anonymous">
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.js"></script>
   <link rel="stylesheet" media="screen"
@@ -31,14 +30,7 @@
   <link rel="stylesheet" media="screen"
         href="https://cdnjs.cloudflare.com/ajax/libs/alertify.js/0.3.11/alertify.bootstrap.min.css">
   <link rel="stylesheet" media="screen"
-        href="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.17.6/clusterize.min.css">
-  <link rel="stylesheet" media="screen"
         href="https://cdnjs.cloudflare.com/ajax/libs/handsontable/0.31.2/handsontable.full.min.css">
-  <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
-  <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css"> -->
-  <script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
-  <script src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
   <link rel="stylesheet" href="css/ladda-themeless.min.css">
   <link rel="stylesheet" media="screen" href="css/style.css">
 </head>
@@ -84,28 +76,6 @@
           <button class="btn btn-primary ladda-button btn-lg btn-block" onclick="simulate(workbook_js);">Process
             spreadsheet
           </button>
-          <br/>
-          <div class="clusterize">
-            <table>
-              <thead>
-              <tr>
-                <th style="font-weight:normal;">Click <b>Process spreadsheet</b> above to begin validating
-                  your data. This area will display the results.
-                </th>
-              </tr>
-              </thead>
-            </table>
-            <br/>
-            <div id="scrollArea" class="clusterize-scroll">
-              <table>
-                <tbody id="contentArea" class="clusterize-content">
-                <!--tr class="clusterize-no-data">
-                  <td style="text-align:left; text-decoration:underline;"><b>Simulation Progress and Results</b></td>
-                </tr-->
-                </tbody>
-              </table>
-            </div>
-          </div>
           <br/>
         </div>
       </div>
@@ -178,7 +148,6 @@
 <script src="js/dropsheet.js"></script>
 <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
 <script>
-  var scoreboard;
   var _target = document.getElementById('drop-area');
   var _choose = document.getElementById('choose-file-button');
   var spinner;
@@ -246,33 +215,13 @@
 
     calculateSize();
 
-    // Separate out information for each table.
-
-    const table_type_label = 'Table Type';
-    var table_json = new Object();
-    for (var i = 0; i < json.length; i++) {
-      var table_type = json[i][table_type_label];
-      var entry = new Object();
-      for (var col in json[i]) {
-        if (col !== table_type_label) {
-          entry[col] = json[i][col];
-        }
-      }
-
-      if (!table_json[table_type]) {
-        table_json[table_type] = [];
-      }
-
-      table_json[table_type].push(entry);
-
-    }
 
     // Generate Handsontable tables.
 
-    for (var table in table_json) {
+    for (var table in json) {
 
       /* add header row for table */
-      table_json[table].unshift(function (head) {
+      json[table].unshift(function (head) {
         var o = {};
         for (i = 0; i != head.length; ++i) {
           o[head[i]] = head[i];
@@ -290,7 +239,7 @@
       $('<h4>' + table + '</h4>').appendTo(parent_div);
 
       $("<div id='#hot-" + table_name + "'></div>").appendTo(parent_div).handsontable({
-        data: table_json[table],
+        data: json[table],
         startRows: 4, startCols: 3, fixedRowsTop: 1,
         rowHeaders: true,
         columns: cols.map(function (x) {
@@ -316,33 +265,6 @@
       $('<br>').appendTo(parent_div);
     }
 
-    console.log(table_json);
-
-    // $('#hot').handsontable({
-    //   data: json,
-    //   startRows: 5, startCols: 3, fixedRowsTop: 1,
-    //   stretchH: 'all',
-    //   rowHeaders: true,
-    //   columns: cols.map(function (x) {
-    //     return {data: x};
-    //   }),
-    //   colHeaders: cols.map(function (x, i) {
-    //     return XLS.utils.encode_col(i);
-    //   }),
-    //   cells: function (r, c, p) {
-    //     if (r === 0) {
-    //       this.renderer = boldRenderer;
-    //     }
-    //   },
-    //   width: function () {
-    //     return availableWidth;
-    //   },
-    //   height: function () {
-    //     return availableHeight;
-    //   },
-    //   stretchH: 'all'
-    // });
-
     // Make object downloadable as json.
 
     $('#download-json-button').click(function (e) {
@@ -363,7 +285,7 @@
 
     });
   });
-  var clusterize = new Clusterize({scrollId: 'scrollArea', contentId: 'contentArea'});
+
   var workbook_js = DropSheet({
     drop: _target, choose: _choose,
     on: {workstart: _workstart, workend: _workend, sheet: _onsheet},

@@ -500,7 +500,7 @@ var DropSheet = function DropSheet(opts) {
 
     // Build up object.
 
-    var formatted_data = [];
+    var formatted_data = new Object();
     var entry;
 
     // Process each table.
@@ -517,6 +517,9 @@ var DropSheet = function DropSheet(opts) {
       }
 
       // For each table, loop through rows.
+
+      var table_object = [];
+
 
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
@@ -547,19 +550,21 @@ var DropSheet = function DropSheet(opts) {
             entry['Location'] = sheet_arr[i][row_well_coordinates.c];
           }
 
-          entry['Table Type'] = table_type;
-
           if (identifier_coordinates !== null) {
             entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
           }
 
           if (!(entry['Identifier'] === '' && entry['Value'] === '')) {
-            formatted_data.push(entry);
+            table_object.push(entry);
           }
 
         }
       }
+
+      formatted_data[table_type] = table_object;
     }
+
+    console.log(formatted_data);
 
     return formatted_data;
   }
