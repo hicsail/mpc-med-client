@@ -240,6 +240,13 @@
         return o;
       }(cols));
 
+      // Friendly format for displaying value object as needed.
+      for (var i = 0; i < json[table].length; i++) {
+        if (json[table][i]['Value'].sign) {
+          json[table][i]['Value'] = json[table][i]['Value'].sign + ''  + json[table][i]['Value'].val;
+        }
+      }
+
 
       // Make id for table that is html-friendly.
       var table_name = table.toLowerCase().replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'');
