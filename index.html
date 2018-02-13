@@ -245,7 +245,7 @@
 
       // Friendly format for displaying value object as needed.
       for (var i = 0; i < json[table].length; i++) {
-        if (json[table][i]['Value'].sign) {
+        if (json[table][i]['Value'] && json[table][i]['Value'].sign) {
           json[table][i]['Value'] = json[table][i]['Value'].sign + ''  + json[table][i]['Value'].val;
         }
       }

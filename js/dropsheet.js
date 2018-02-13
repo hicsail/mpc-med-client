@@ -105,6 +105,8 @@ var DropSheet = function DropSheet(opts) {
 
     // Process first ws only by default
     var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+
+    console.log(processed_data);
     const cols = ['Location', 'Identifier', 'Analyte', 'Value'];
 
     opts.on.sheet(processed_data, cols);
